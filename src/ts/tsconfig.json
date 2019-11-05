@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "../js/",
+    "noImplicitAny": false,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "sourceMap": false,
+    "allowJs": true,
+    "target": "es5"
+  },
+  "files": [
+    "Arrow.ts",
+    "Circle.ts",
+    "CONFIG.ts",
+    "DBConnection.ts",
+    "DrawingArea.ts",
+    "DrawingButtons.ts",
+    "DrawingObject.ts",
+    "EventChain.ts",
+    "EventMarker.ts",
+    "FilterArea.ts",
+    "FreehandMotionPath.ts",
+    "main.ts",
+    "MultiPathLine.ts",
+    "MultiPathLineWithArrow.ts",
+    "Polygon.ts",
+    "Rectangle.ts",
+    "Result.ts",
+    "ResultList.ts",
+    "SaveQuery.ts",
+    "StraightMotionPath.ts",
+    "Timeline.ts",
+    "VideoArea.ts",
+    "Analysis.ts",
+    "OffBallActivities.ts",
+    "BoundingBox.ts"
+  ]
+}

@@ -1,0 +1,73 @@
+/*
+ * SportSense
+ * Copyright (C) 2019  University of Basel
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#playerAnalysis {
+    width:100%;
+    height:50%;
+}
+.row-g {
+    width:100%;
+    display: inline-flex;
+}
+.row-name {
+    font-size: 20px;
+    text-align:center;
+}
+.bar-g {
+    height:100px;
+    width:inherit;
+    margin:5px;
+}
+.fill-g {
+    width:100%;
+}
+.value-g {
+    padding-left: 10px;
+    padding-top: 77px;
+    font-size: 16px;
+    font-family: sans-serif;
+    color: white;
+}
+.players-g {
+    width:100%;
+    display: inline-flex;
+}
+.card-g {
+    background-color: white;
+    border:1px solid black;
+    height: 130px;
+    width: inherit;
+    margin: 5px;
+}
+.name-g{
+    padding: 10px;
+    font-min-size: large;
+}
+
+#slider{
+    width: 50%;
+    margin: 0 auto;
+}
+#timeBtns{
+    display: table;
+    padding-top: 10px;
+    margin: 0 auto;
+}
+#sliderDiv{
+    margin-top: 30px;
+}

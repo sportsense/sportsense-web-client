@@ -1,0 +1,55 @@
+/*
+ * SportSense
+ * Copyright (C) 2019  University of Basel
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+.ul-query {
+    position: absolute;
+    top: 20px;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    overflow: scroll;
+    margin: 0;
+    padding: 0;
+    border: 2px solid #ccc;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    -webkit-overflow-scrolling: touch;
+}
+
+.li-query {
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc;
+}
+.li-query:last-child {
+    border-bottom: none;
+}
+.li-query:nth-child(even) {
+    background: #f8f8f8;
+}
+
+.btn-space{
+    margin-left: 5px;
+}
+
+#selectProperties{
+    margin-left: 250px;
+}
+
+#savedQueries{
+    overflow-x: hidden;
+}

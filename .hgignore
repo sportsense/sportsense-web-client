@@ -1,0 +1,13 @@
+syntax: glob
+
+videos/**
+
+.idea/**
+
+docs/**
+
+.iws
+
+workspace.xml
+
+tasks.xml

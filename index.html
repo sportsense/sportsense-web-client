@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<!--
+  ~ SportSense
+  ~ Copyright (C) 2019  University of Basel
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  -->
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Sport Sense</title>
+
+    <!-- import external css files -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-grid.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-reboot.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.3/dist/css/bootstrap-select.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/video.js@7.6.5/dist/video-js.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vis@4.21.0-EOL/dist/vis-timeline-graph2d.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/jquery-contextmenu@2.8.1/dist/jquery.contextMenu.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
+
+    <!-- import internal css files -->
+    <link href="src/css/zoomingtool.css" rel="stylesheet">
+    <link href="src/css/savedQueryList.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+        b.analyze{
+            font-size: 150%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar/Drawing tools -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <p class="navbar-brand noselect">Sport Sense</p>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav navbar-center" id="selectProperties"> <!--<ul class="navbar-nav mr-auto"> -->
+                <form action="" class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group mb-3 navbar-inputgroup-margin">
+                            <!-- <div class="input-group-prepend">
+                                <label class="input-group-text" for="inputGroupSelect01">Drawing</label>
+                            </div> -->
+                            <select class="custom-select" id="drawing_mode" onchange="DrawingButtons.changeDrawingMode()" onclick="DrawingArea.clearCanvas(true)">
+                                <option value="1" selected>Event Query</option>
+                                <option value="2">Forward Event Cascade</option>
+                                <option value="3">Reverse Event Cascade</option>
+                                <option value="4">Straight Motionpath</option>
+                                <option value="5">Freehand Motionpath</option>
+                            </select>
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" id="rectangle_btn" onclick="DrawingButtons.activateButton('rectangle_btn'); DrawingArea.clearAndResetDefault()">Rectangle</button>
+                                <button class="btn btn-outline-secondary" type="button" id="circle_btn" onclick="DrawingButtons.activateButton('circle_btn'); DrawingArea.clearAndResetDefault()">Circle</button>
+                                <button class="btn btn-outline-secondary" type="button" id="freedraw_btn" onclick="DrawingButtons.activateButton('freedraw_btn'); DrawingArea.clearAndResetDefault()">Freedraw</button>
+                                <button class="btn btn-outline-secondary" type="button" id="expand_btn" onclick="DrawingButtons.expandBtn()"
+                                    disabled>Expand</button>
+                                <button class="btn btn-warning" type="button" id="undo_btn" onclick="javascript:DrawingArea.undo();">Undo</button>
+                                <button class="btn btn-danger" type="button" id="clear_btn" onclick="javascript:DrawingArea.clearAndReset();">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="invisible input-group mb-3" id="motionpath_filter_group" style.display="none">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="inputGroupSelect01">Motion Path Filter</label>
+                        </div>
+                        <select class="custom-select" id="motionpath_filter" onchange="DrawingButtons.mpFilterChanged()">
+                            <option value="BALL">Ball Motion</option>
+                            <option value="PLAYER">Player Motion</option>
+                        </select>
+                    </div>
+                    <div class="invisible input-group mb-3 motionpath-slider" id="motionpath_size_group" style.display="none">
+                        <input id="motionpath_size" type="range" min="20" max="250" value="50">
+                    </div>
+                </form>
+            </ul>
+
+            <!-- CREDITS Button for the Highlight Icons-- Removed for Licensing -->
+            <!--
+            <ul class="nav navbar-nav navbar-right">
+                <div class="mr-sm-2">
+                    <button type="button" class="btn btn-outline-dark" style="margin-bottom: 15px" data-toggle="modal" data-target="#creditsModal">Credits</button>
+                </div>
+            </ul>
+            -->
+        </div>
+    </nav>
+    <!-- End of navbar -->
+
+    <div class="main-div">
+        <div class="firstrow row">
+
+            <!-- Video area -->
+            <div class="col-12 col-md-5 row-inner">
+                <video id="video" class="video-js vjs-big-play-centered row-inner video-row" controls="true" preload="true"
+                    data-setup="{}">
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a web browser that
+                        <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                    </p>
+                </video>
+            </div>
+
+            <!-- Drawing area -->
+            <div class="col-12 col-md-5 field-container row-inner" id="field-container">
+                <canvas id="field"></canvas>
+            </div>
+
+            <!-- Filter area -->
+            <div class="col-12 col-md-2">
+                <h3 style="text-align:center; margin-top: 10px;">Filters</h3>
+                <div align="center" id="matchfilter">
+                    <select class="selectpicker filter-padding" id="match_filter" data-live-search="true" multiple
+                        title="No match filter selected" data-size="5">
+                    </select>
+                </div>
+                <div align="center" id="eventfilter">
+                    <select class="selectpicker filter-padding filterdropdown" id="event_filter" data-live-search="true"
+                        multiple title="No event filter selected" data-size="5">
+                    </select>
+                </div>
+                <div align="center" id="teamfilter">
+                    <select class="selectpicker filter-padding filterdropdown" id="team_filter" data-live-search="true"
+                        multiple title="No team filter selected" data-size="5">
+                    </select>
+                </div>
+                <div align="center" id="playerfilter">
+                    <select class="selectpicker filter-padding filterdropdown" id="player_filter" data-live-search="true"
+                        multiple title="No player filter selected" data-size="5">
+                    </select>
+                </div>
+                <div align="center" id="periodfilter">
+                    <select class="selectpicker filter-padding filterdropdown" id="period_filter" data-live-search="true"
+                        multiple title="No period filter selected" data-size="5">
+                        <option value="1">First Period</option>
+                        <option value="2">Second Period</option>
+                        <option value="3">Third Period</option>
+                    </select>
+                </div>
+                <div align="center" id="expandfilter">
+                    <select class="selectpicker filter-padding filterdropdown" id="expand_filter" disabled
+                        data-live-search="true" multiple title="No expand filter selected" data-size="5">
+                    </select>
+                </div>
+                <button class="btn btn-primary" type="button" id="saveQuery_btn" data-toggle="modal" data-target="#saveFilterModal">Save</button>
+                <p><div class="alert alert-success alert-dismissible" style="display: none" id="saved">
+                    <strong>Query Saved</strong>
+                </div>
+            </div>
+        </div>
+        <!-- End of filter area -->
+
+        <!-- Save Filter Modal -->
+        <div class="modal fade" id="saveFilterModal" tabindex="-1" role="dialog" aria-labelledby="saveFilterModalLabel" aria-hidden="true" onsubmit="return false">
+            <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="saveFilterModalLabel">Save Query</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="filter-name" class="col-form-label">Query Name:</label>
+                                <input type="text" class="form-control" id="filter-name">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="SaveQuery.saveQuery();" data-dismiss="modal" >Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="secondrow row">
+            <div class="col-12 col-md-5">
+                <div class="container-fluid">
+                    <ul class="ul-query" id="savedQueries">
+                    </ul>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <br>
+                <b>Timeline options</b>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="timeline_filter_switch" onclick="javascript:Timeline.triggerTimeFilter();">
+                    <label class="form-check-label" for="exampleCheck1">Activate timeline filter</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="zooming_filter_switch" onclick="javascript:Timeline.triggerZoomingFilter();">
+                    <label class="form-check-label" for="exampleCheck1">Activate zooming filter</label>
+                </div>
+
+                <b class="analyze">Analyze: </b>
+                 <!-- <button type="button" class="btn btn-secondary" id="matchAnalysisBtn" onclick="Analysis.openNewTab('matchAnalysis')">Match</button> -->
+                <button type="button" class="btn btn-secondary" id="playerAnalysisBtn" onclick="Analysis.openNewTab('playerAnalysis')">Players</button>
+                <button type="button" class="btn btn-secondary" id="queryAnalysisBtn" onclick="Analysis.openNewTab('queryAnalysis')">Queries</button>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div style="display: flex;">
+                    <div style="flex: 50%;">
+                        <br>
+                        <div>
+                            <b>Off-ball activities</b>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="offball_activate" onclick="javascript:OffBallActivities.triggerOffBallActivities();">
+                            <label class="form-check-label">Activate off-ball activities</label>
+                        </div>
+                        <div class="offball-toggle" style="display: none;">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="polygon_active" onclick="javascript:OffBallActivities.triggerPolygonSelection();">
+                                <label class="form-check-label">Display bounding boxes</label>
+                            </div>
+                            <!-- The colors of the labels are set in the constructor of the OffBallActivities class -->
+                            <div style="display: flex;">
+                                <div style="flex: 50%;">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="offball_team_a_switch" onclick="javascript:OffBallActivities.triggerTeamASelection();">
+                                        <label class="form-check-label" id="offball_team_a_label">Team A</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="offball_team_b_switch" onclick="javascript:OffBallActivities.triggerTeamBSelection();">
+                                        <label class="form-check-label" id="offball_team_b_label">Team B</label>
+                                    </div>
+                                </div>
+                                <div style="flex: 50%;">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="offball_ball_switch" onclick="javascript:OffBallActivities.triggerBallSelection();">
+                                        <label class="form-check-label" id="offball_ball_label">Ball</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 50%;">
+                        <div class="offball-toggle" style="display: none;">
+                            <br>
+                            <button class="btn btn-outline-secondary" type="button" id="offball_btn" onclick="OffBallActivities.nextQuery();">Update Off-ball-motion</button>
+                            <p> </p><!-- we need that to create space between the button and the selectpicker. interestingly, br does not work here  -->
+
+                            <div align="center" id="offball_playerfilter">
+                                <select class="selectpicker filter-padding filterdropdown" id="offball_player_filter" data-live-search="true"
+                                        multiple title="Player filter" data-size="5">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 70%; height: 10%;">
+                    <div class="offball-toggle" style="display: none;">
+                        <div id="offball_visualization_simple">
+                            <div class="offball-slider-container">
+                                <input id="offball_slider1" class="offball-slider" oninput="OffBallActivities.sliderChanged();" onchange="OffBallActivities.sliderSet();" type="range" min="-10" max="10" value="3">
+                            </div>
+                            <div class="offball-slider-container">
+                                <input id="offball_slider2" class="offball-slider no-track" oninput="OffBallActivities.sliderChanged();" onchange="OffBallActivities.sliderSet();" type="range" min="-10" max="10" value="0">
+                            </div>
+                            <p id="offball_info">0 to 3 seconds</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="thirdrow row">
+            <div class="col-12 col-md-12">
+                <div id="visualization"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<!-- Modal -->
+<div class="modal fade" id="errorMPModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle" style="color:red">Error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="error-modal-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credits Modal -->
+<div class="modal fade" id="creditsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <p>Single match view vector graphics by:</p>
+                <a href="http://www.freepik.com">Ibrandify / Freepik</a>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- import external libraries -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fabric@1.7.12/dist/fabric.min.js"></script>
+<script src="https://getbootstrap.com/docs/4.1/assets/js/vendor/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.3/js/bootstrap-select.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/video.js@7.3.0/dist/video.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vis@4.21.0-EOL/dist/vis.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-contextmenu@2.8.1/dist/jquery.contextMenu.js"></script>
+<script src="http://jsclipper.sourceforge.net/6.4.2.2/clipper_unminified.js"></script>
+
+
+<!-- import SportSense js files -->
+<script src="src/js/SaveQuery.js"></script>
+<script src="src/js/CONFIG.js"></script>
+<script src="src/js/DBConnection.js"></script>
+<script src="src/js/FilterArea.js"></script>
+<script src="src/js/DrawingArea.js"></script>
+<script src="src/js/DrawingButtons.js"></script>
+<script src="src/js/DrawingObject.js"></script>
+<script src="src/js/EventMarker.js"></script>
+<script src="src/js/EventChain.js"></script>
+<script src="src/js/Rectangle.js"></script>
+<script src="src/js/Result.js"></script>
+<script src="src/js/ResultList.js"></script>
+<script src="src/js/Circle.js"></script>
+<script src="src/js/Polygon.js"></script>
+<script src="src/js/StraightMotionPath.js"></script>
+<script src="src/js/FreehandMotionPath.js"></script>
+<script src="src/js/Arrow.js"></script>
+<script src="src/js/MultiPathLine.js"></script>
+<script src="src/js/MultiPathLineWithArrow.js"></script>
+<script src="src/js/VideoArea.js"></script>
+<script src="src/js/Timeline.js"></script>
+<script src="src/js/OffBallActivities.js"></script>
+<script src="src/js/BoundingBox.js"></script>
+<script src="src/js/main.js"></script>
+<script src="src/js/Analysis.js"></script>
+
+</html>

@@ -36,7 +36,7 @@ var DrawingArea = /** @class */ (function () {
         DrawingArea.border = 0; // drawingObjects will use this size to check if they are within the canvas borders
         DrawingArea.polygon_drawing = false;
         if (window.location.search.substr(1).split('=')[1] === "football") {
-            DrawingArea.field_src = './imgs/soccer_field.gif';
+            DrawingArea.field_src = './imgs/soccer.jpg';
             DrawingArea.db_X_max = CONFIG.DB_X_MAX_soccer;
             DrawingArea.db_X_min = CONFIG.DB_X_MIN_soccer;
             DrawingArea.db_Y_max = CONFIG.DB_Y_MAX_soccer;
@@ -54,6 +54,7 @@ var DrawingArea = /** @class */ (function () {
         // adding event listeners for the automatic resizing of the canvas
         window.addEventListener('resize', DrawingArea.resizeCanvas);
         window.addEventListener('DOMContentLoaded', DrawingArea.resizeCanvas);
+        window.addEventListener('load', DrawingArea.resizeCanvas);
         // canvas event listeners
         DrawingArea.field.on('mouse:down', function (o) {
             DrawingArea.mouseDown(o);
@@ -111,6 +112,23 @@ var DrawingArea = /** @class */ (function () {
                 $('.upper-canvas').contextMenu('update', updateObj);
             }
         });
+        var entry = document.getElementById("entryEventsBtn");
+        var shift = document.getElementById("shiftEventsBtn");
+        var pressing2d = document.getElementById("pressingAnalysis2dBtn");
+        var pressing = document.getElementById("pressingAnalysisBtn");
+        var offTrans = document.getElementById("offTransBtn");
+        var defTrans = document.getElementById("defTransBtn");
+        var sport = window.location.search.substr(1).split('=')[1];
+        if (sport != 'icehockey') {
+            entry.style.display = "none";
+            shift.style.display = "none";
+        }
+        if (sport == 'icehockey') {
+            pressing2d.style.display = "none";
+            pressing.style.display = "none";
+            offTrans.style.display = "none";
+            defTrans.style.display = "none";
+        }
     }
     /**
      * This function removes every drawn object on the canvas.
@@ -133,7 +151,32 @@ var DrawingArea = /** @class */ (function () {
         DBConnection.resetExpandFilterList();
         $("#zooming_filter_switch").prop('checked', false);
         Timeline.zoomingfilterActive = false;
-        OffBallActivities.clear();
+        if (Timeline.getFilterActive() == true) {
+            $("#timeline_filter_switch").prop('checked', false);
+            Timeline.triggerTimeFilter();
+        }
+        else {
+            $("#timeline_filter_switch").prop('checked', false);
+        }
+        if (OffBallActivities.isActive == true) {
+            OffBallActivities.triggerOffBallActivities();
+            $("#offball_activate").prop('checked', false);
+            OffBallActivities.clear();
+        }
+        var pressBtnContent = document.getElementById("pressingAnalysis2dBtn").innerHTML;
+        if (pressBtnContent == "Deactivate Pressing Index") {
+            Analysis.reset2dToDefault();
+        }
+        var pressPhasesBtnContent = document.getElementById("pressingAnalysisBtn").innerHTML;
+        if (pressPhasesBtnContent == "Deactivate Pressing Phases") {
+            document.getElementById("pressingAnalysisBtn").innerHTML = 'Pressing Phases';
+            Timeline.resizeTimeline();
+        }
+        var netBtnContent = document.getElementById("passNetworkBtn").innerHTML;
+        if (netBtnContent == "Deactivate Pass Network") {
+            Network.clearNodesAndEdges();
+            document.getElementById("passNetworkBtn").innerHTML = 'Pass Network';
+        }
     };
     /**
      * This function calls clearCanvas() and resets the drawing mode to default
@@ -141,6 +184,7 @@ var DrawingArea = /** @class */ (function () {
     DrawingArea.clearAndReset = function () {
         this.clearCanvas();
         DrawingButtons.standardDrawingMode();
+        Analysis.clearHeatmap();
     };
     /**
      * This function checks the Drawing Mode and calls clearCanvas(). This is needed to delete Highlights and
@@ -155,6 +199,7 @@ var DrawingArea = /** @class */ (function () {
         else {
             return;
         }
+        Analysis.clearHeatmap();
     };
     /**
      * This function will be executed after the user selects a single object, or multiple objects.
@@ -184,7 +229,8 @@ var DrawingArea = /** @class */ (function () {
      */
     DrawingArea.selectionCleared = function () {
         DrawingArea.selected_object = null;
-        FilterArea.resetFilters();
+        // DO NOT resetFilters here, this leads to ugly bugs
+        //FilterArea.resetFilters();
     };
     /**
      * This function resets the solutions, removes delete button and
@@ -314,7 +360,6 @@ var DrawingArea = /** @class */ (function () {
             DrawingArea.field.remove(DrawingArea.polygon_line_active);
             DrawingArea.polygon_line_active = null;
             DrawingArea.polygon_drawing = false;
-            //DrawingButtons.standardDrawingMode();
             if (!(DrawingButtons.getButtonState()[1] == 2 && DrawingArea.active_objects.length != 1)) {
                 DBConnection.nextQuery();
             }
@@ -429,8 +474,7 @@ var DrawingArea = /** @class */ (function () {
         // clearing drawn objects on canvas
         DrawingArea.clearCanvas();
         // first get width, height and aspect ratio of background img
-        var img = new Image;
-        var img_path = "url('../../" + DrawingArea.field_src + "')";
+        var img = new Image();
         document.getElementById("field-container").style.backgroundImage = "url('" + DrawingArea.field_src + "')";
         img.src = DrawingArea.field_src;
         var imgW = img.width;
@@ -499,7 +543,6 @@ var DrawingArea = /** @class */ (function () {
         var canvasRangeY = canvas_size[1];
         var DBRangeX = (DrawingArea.db_X_max - DrawingArea.db_X_min);
         var DBRangeY = (DrawingArea.db_Y_max - DrawingArea.db_Y_min);
-        // console.log("Canvas Range X, Y: " + canvasRangeX + canvasRangeY + "DB Range X, Y: " + DBRangeX + DBRangeY);
         return [canvasRangeX, canvasRangeY, DBRangeX, DBRangeY];
     };
     DrawingArea.getFullAreaSelection = function () {
@@ -541,7 +584,7 @@ var DrawingArea = /** @class */ (function () {
             this.field_src = './imgs/rink.gif';
         }
         else {
-            this.field_src = './imgs/soccer_field.gif';
+            this.field_src = './imgs/soccer.jpg';
         }
         this.resizeCanvas();
     };

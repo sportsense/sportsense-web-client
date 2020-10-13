@@ -42,6 +42,7 @@ class Rectangle extends DrawingObject{
             object_ref: this
         });
         DrawingArea.field.add(this.rect);
+        DrawingArea.field.renderAll();
     }
 
     /**

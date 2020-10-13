@@ -25,6 +25,7 @@ var DBConnection = /** @class */ (function () {
     DBConnection.nextQuery = function (filterName) {
         if (filterName) {
             DBConnection.filterName = filterName;
+            DBConnection.sportName = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
             //If there is a filterName given in the method call then set the filterName
         }
         var buttonState = DrawingButtons.getButtonState();
@@ -57,7 +58,7 @@ var DBConnection = /** @class */ (function () {
      * shapeQuery: gets called when a normal query is created
      * ecQuery: Event Cascade
      * mpQuery: Motionpath query
-     * highlightQuery: When use clikcs on match they see the most important events as point as well as the phases in the timeline
+     * highlightQuery: When use clicks on match they see the most important events as point as well as the phases in the timeline
      * /getEventTypes, /getTeams, /getPlayers, /getMatches, to fill the selections in the filter area
      */
     DBConnection.sendQuery = function (query, method, reverse, all_ids, executeAgain, cascade) {
@@ -68,8 +69,8 @@ var DBConnection = /** @class */ (function () {
             //Here we change the query before we make the xhttp request
             // This is done when the user wants to save the query
         }
-        //console.log(query);
         var xhttp = new XMLHttpRequest();
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
         //function gets called when the ready state changes. It goes from 0 to 4. 4 means request finished and response is ready
         xhttp.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
@@ -78,9 +79,11 @@ var DBConnection = /** @class */ (function () {
                     DBConnection.querySaved("Query Saved");
                     if (all_ids.length != 0) {
                         DBConnection.filterName = all_ids[0];
+                        DBConnection.sportName = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
                     }
                     SaveQuery.addSavedQuery(DBConnection.filterName, json);
                     DBConnection.filterName = undefined;
+                    DBConnection.sportName = undefined;
                 }
                 else if (method == "delQuery") {
                     DBConnection.querySaved("Query Deleted");
@@ -91,19 +94,29 @@ var DBConnection = /** @class */ (function () {
                 else if (method == "shapeQuery") {
                     DBConnection.fillResults(json, cascade, false);
                 }
+                else if (method == "shiftQuery") {
+                    DBConnection.fillResults(json, cascade, false);
+                }
+                else if (method == "entryQuery") {
+                    DBConnection.fillHeatmapResults(json, cascade, false);
+                }
+                else if (method == "findAllQuery") {
+                    DBConnection.fillResults(json, cascade, false);
+                }
                 else if (method == "ecQuery") {
                     DBConnection.fillECResult(json, all_ids, reverse);
                 }
                 else if (method == "mpQuery") {
-                    //console.log(query);
                     DBConnection.fillMPResult(json, false);
                 }
                 else if (method == "mpQueryWithArrows") {
-                    console.log(query);
                     DBConnection.fillMPResult(json, true);
                 }
                 else if (method == "highlightQuery") {
                     DBConnection.fillHighlights(json);
+                }
+                else if (method == "/analyzeTeams") {
+                    Analysis.analyzeTeams(json);
                 }
                 else if (method == "/analyzePlayers") {
                     Analysis.analyzePlayers(json);
@@ -111,7 +124,37 @@ var DBConnection = /** @class */ (function () {
                 else if (method == "/analyzeQueries") {
                     Analysis.showQueryGraphs(json);
                 }
-                else if (method == "/getQueries") {
+                else if (method == "/analyzePressing") {
+                    DBConnection.analyzePressingResult(json);
+                }
+                else if (method == "/analyzePressing2d") {
+                    DBConnection.analyzePressing2dResult(json, method);
+                }
+                else if (method == "/analyzeTransitions") {
+                    DBConnection.analyzeTransitionResult(json);
+                }
+                else if (method == "/analyzePlayerSpeed") {
+                    DBConnection.analyzePlayerSpeedResult(json, method);
+                }
+                else if (method == "/analyzePlayerPassNetwork") {
+                    DBConnection.analyzePlayerNetworkResult(json);
+                }
+                else if (method == "/getTeamSettings") {
+                    DBConnection.setTeamSettings(json);
+                }
+                else if (method == "/saveUser") {
+                    DBConnection.userSaved("User Saved");
+                }
+                else if (method == "/getUsers") {
+                    UserSettings.fillUsers(json);
+                }
+                else if (method == "/getUserParameter") {
+                    UserSettings.updateModalValues(json);
+                }
+                else if (method == "/customizePressing") {
+                    DBConnection.customized(json);
+                }
+                else if (method == "/getQueries?sportFilter=" + sport) {
                     if (DBConnection.analysisOn == false) {
                         SaveQuery.fillQueries(json);
                     }
@@ -120,9 +163,17 @@ var DBConnection = /** @class */ (function () {
                         DBConnection.analysisOn = false;
                     }
                 }
-                else if (method == "/getPlayers" && DBConnection.analysisOn == true) {
+                else if ((method == "/getPlayers?sportFilter=" + sport) && DBConnection.analysisOn == true) {
                     //Fills the players in the player analysis Selection
-                    Analysis.fillSelection(json);
+                    Analysis.fillSelectionPlayer(json);
+                }
+                else if ((method == "/getTeams?sportFilter=" + sport) && DBConnection.analysisOn == true) {
+                    //Fills the teams in the team analysis Selection
+                    Analysis.fillSelectionTeam(json);
+                }
+                else if ((method == "/getMatches?sportFilter=" + sport) && DBConnection.analysisOn == true) {
+                    //Fills the matches in the player and team analysis Selection
+                    Analysis.fillSelectionMatch(json);
                     DBConnection.analysisOn = false;
                 }
                 else {
@@ -146,14 +197,26 @@ var DBConnection = /** @class */ (function () {
         xhttp.send();
     };
     /**
+     * Calls the Server with the teams to analyze and which parameters
+     * @param teamIDArray
+     * @param paramArray
+     */
+    DBConnection.analyzeTeams = function (user, teamIDArray, paramArray, matchArray) {
+        var method = "/analyzeTeams";
+        var userName = user;
+        var defaultPressingInfo = '&pressingDurationThreshold=' + CONFIG.PRESSING_DURATION_THRESHOLD + '&pressingIndexThreshold=' + CONFIG.PRESSING_INDEX_THRESHOLD;
+        var query = CONFIG.PROXY_ADDRESS + method + "?user=" + userName + "&teams=" + teamIDArray + "&parameters=" + paramArray + "&matches=" + matchArray + defaultPressingInfo;
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
      * Calls the Server with the players to analyze and which parameters
      * @param playerIDArray
      * @param paramArray
      */
-    DBConnection.analyzePlayers = function (playerIDArray, paramArray) {
+    DBConnection.analyzePlayers = function (user, playerIDArray, paramArray, matchArray) {
         var method = "/analyzePlayers";
-        var query = CONFIG.PROXY_ADDRESS + method + "?players=" + playerIDArray + "&parameters=" + paramArray;
-        //console.log(query);
+        var userName = user;
+        var query = CONFIG.PROXY_ADDRESS + method + "?user=" + userName + "&players=" + playerIDArray + "&parameters=" + paramArray + "&matches=" + matchArray;
         DBConnection.sendQuery(query, method, false, [], 0, false);
     };
     /**
@@ -164,11 +227,144 @@ var DBConnection = /** @class */ (function () {
     DBConnection.analyzeQueries = function (queryIdArray, timeFilter) {
         var method = "/analyzeQueries";
         var query = CONFIG.PROXY_ADDRESS + method + "?queryIds=" + queryIdArray + "&timeFilter=" + timeFilter;
-        //console.log(query);
         DBConnection.sendQuery(query, method, false, [], 0, false);
     };
     /**
-     * Generates an alert for 2.5 seconds that the query has been saved/deleted
+     * Calls the Server for getting Pressure Phases of a specific match
+     */
+    DBConnection.analyzePressing = function (user) {
+        var method = "/analyzePressing";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + '}';
+        var username = user;
+        var pressingInfo = 'userName=' + username + '&pressingDurationThreshold=' + CONFIG.PRESSING_DURATION_THRESHOLD + '&pressingIndexThreshold=' + CONFIG.PRESSING_INDEX_THRESHOLD;
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + match + "&" + pressingInfo;
+        // makes the analysing button visible
+        $('#analysingBtn').removeClass("invisible");
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Calls the Server for getting the Pressure Index values for both teams of a specific match
+     */
+    DBConnection.analyzePressing2d = function () {
+        var method = "/analyzePressing2d";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + '}';
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + match;
+        // makes the analysing button visible
+        $('#analysingBtn').removeClass("invisible");
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Calls the Server for getting the offensive transition phases for a team in a specific match
+     */
+    DBConnection.analyzeOffTransition = function (user) {
+        var method = "/analyzeTransitions";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + '}';
+        var team = 'teamFilters={' + FilterArea.getTeamFilters() + '}';
+        var username = user;
+        var transType = 'type=offensive';
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + username + "&" + match + "&" + team + "&" + transType;
+        // makes the analysing button visible
+        $('#analysingBtn').removeClass("invisible");
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Calls the Server for getting the defensive transition phases for a team in a specific match
+     */
+    DBConnection.analyzeDefTransition = function (user) {
+        var method = "/analyzeTransitions";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + '}';
+        var team = 'teamFilters={' + FilterArea.getTeamFilters() + '}';
+        var username = user;
+        var transType = 'type=defensive';
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + username + "&" + match + "&" + team + "&" + transType;
+        // makes the analysing button visible
+        $('#analysingBtn').removeClass("invisible");
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Calls the Server for getting the speed of one or several players in a specific match
+     */
+    DBConnection.analyzePlayerSpeed = function () {
+        var method = "/analyzePlayerSpeed";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + '}';
+        var players = 'playerFilters={' + FilterArea.getPlayerFilters() + '}';
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + match + "&" + players;
+        // makes the analysing button visible
+        $('#analysingBtn').removeClass("invisible");
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Calls the Server for getting the pass network of a team in a specific match
+     */
+    DBConnection.analyzePlayerPassNetwork = function () {
+        var method = "/analyzePlayerPassNetwork";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + '}';
+        var team = 'teamFilters={' + FilterArea.getTeamFilters() + '}';
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + match + "&" + team;
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Gets the result from the Server and calls the fillHighlightsPhases method
+     */
+    DBConnection.analyzePressingResult = function (json) {
+        DBConnection.fillPressingPhases(json);
+    };
+    /**
+     * Gets the result from the Server and calls the fillItemList and visualizeGraph2d methods
+     */
+    DBConnection.analyzePressing2dResult = function (json, method) {
+        Graph2d.fillItemList(json, method);
+        Graph2d.visualizeGraph2d(method);
+    };
+    /**
+     * Gets the result from the Server and calls the fillTransitionPhases method
+     */
+    DBConnection.analyzeTransitionResult = function (json) {
+        DBConnection.fillTransitionPhases(json);
+    };
+    /**
+     * Gets the result from the Server and calls the filmItemlist and visualizeGraph2d methods
+     */
+    DBConnection.analyzePlayerSpeedResult = function (json, method) {
+        Graph2d.fillItemList(json, method);
+        Graph2d.visualizeGraph2d(method);
+    };
+    /**
+     * Gets the result from the Server and calls the createNodesAndEdges and visualizeNetwork methods
+     */
+    DBConnection.analyzePlayerNetworkResult = function (json) {
+        Network.createNodesAndEdges(json);
+        Network.visualizeNetwork();
+    };
+    /**
+     * Calls the Server to change the values in the DB for a specific user
+     * @param user
+     * @param pressingIndex
+     * @param pressingDuration
+     */
+    DBConnection.customizePressing = function (user, pressingIndex, pressingDuration) {
+        var method = "/customizePressing";
+        var username = user;
+        var index = pressingIndex;
+        var duration = pressingDuration;
+        var customizeInfo = 'userName=' + username + '&pressingDurationThreshold=' + duration + '&pressingIndexThreshold=' + index;
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + customizeInfo;
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Gets the result from the Server
+     */
+    DBConnection.customized = function (json) {
+        //console.log("Successful Pressure customization");
+    };
+    DBConnection.getUserParam = function (user) {
+        var method = "/getUserParameter";
+        var username = user;
+        var query = CONFIG.PROXY_ADDRESS + method + "?userName=" + username;
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * Generates an alert for 3.0 seconds that the query has been saved/deleted
      * @param output
      */
     DBConnection.querySaved = function (output) {
@@ -177,7 +373,19 @@ var DBConnection = /** @class */ (function () {
         x.style.display = "table";
         setTimeout(function () {
             x.style.display = "none";
-        }, 2500); //Waits 2.5 seconds to remove the alert again
+        }, 3000); //Waits 3.0 seconds to remove the alert again
+    };
+    /**
+     * Generates an alert for 2.0 seconds that the user has been saved
+     * @param output
+     */
+    DBConnection.userSaved = function (output) {
+        var x = document.getElementById('user_saved'); //Make the saved alert appear
+        x.innerText = output;
+        x.style.display = "table";
+        setTimeout(function () {
+            x.style.display = "none";
+        }, 2000); //Waits 2.0 seconds to remove the alert again
     };
     /**
      * This function searches for events within one or multiple user-drawn objects.
@@ -201,6 +409,58 @@ var DBConnection = /** @class */ (function () {
         }
     };
     /**
+     * This function searches for entry events used for the heatmap.
+     */
+    DBConnection.entryQuery = function () {
+        var btn = document.getElementById("entryEventsBtn").innerHTML;
+        if (btn != "Deactivate Entries") {
+            var entryFilters = '&sportFilter={\'sport\':icehockey}'
+                + DBConnection.getMatchFilter()
+                + DBConnection.getTeamFilter()
+                + DBConnection.getPlayerFilter()
+                + DBConnection.getPeriodFilter()
+                + '&eventFilters={"0":"entryEvent"}';
+            DBConnection.sendQuery(DBConnection.getCustomEntryURL("/getAreaEvents?") + entryFilters, "entryQuery", false, [], 0, false);
+            document.getElementById("entryEventsBtn").innerHTML = 'Deactivate Entries';
+        }
+        else {
+            document.getElementById("entryEventsBtn").innerHTML = 'Entries';
+            DrawingArea.clearAndResetDefault();
+        }
+    };
+    /**
+     * This function searches for shift events used for displaying shifts in the timeline.
+     */
+    DBConnection.shiftQuery = function () {
+        var shiftURL = CONFIG.PROXY_ADDRESS
+            + "/getAreaEvents?"
+            + "shape=null&coordinates={}"
+            + '&sportFilter={\'sport\':icehockey}'
+            + DBConnection.getMatchFilter()
+            + DBConnection.getTeamFilter()
+            + DBConnection.getPlayerFilter()
+            + DBConnection.getPeriodFilter()
+            + '&eventFilters={"0":"shiftEvent"}';
+        Arrow.deleteAllArrows();
+        EventChain.clearChains();
+        ResultList.clearResultList();
+        DrawingArea.clearCanvas();
+        FilterArea.resetFilters();
+        DBConnection.sendQuery(shiftURL, "shiftQuery", false, [], 0, true);
+    };
+    DBConnection.findAllQuery = function () {
+        var findAllURL = CONFIG.PROXY_ADDRESS
+            + "/getAreaEvents?"
+            + "shape=null&coordinates={}"
+            + DBConnection.getEventFilter()
+            + DBConnection.getTeamFilter()
+            + DBConnection.getPlayerFilter()
+            + DBConnection.getPeriodFilter()
+            + DBConnection.getMatchFilter()
+            + DBConnection.getSportFilter();
+        DBConnection.sendQuery(findAllURL, "findAllQuery", false, [], 0, false);
+    };
+    /**
      * This function is called if forward event cascade is selected, it fetches all available data and calls the sendQuery function.
      */
     DBConnection.eventCascade = function () {
@@ -215,6 +475,8 @@ var DBConnection = /** @class */ (function () {
             DBConnection.shapeQuery(false, executeAgain, true);
         }
         else {
+            // makes the analysing button visible
+            $('#analysingBtn').removeClass("invisible");
             MultiPathLine.deleteAllLines();
             DBConnection.active_eventmarkers = EventChain.getLastMarkers();
             var active_object = DrawingArea.active_objects[DBConnection.cascadeDepth];
@@ -244,7 +506,6 @@ var DBConnection = /** @class */ (function () {
             tsquery = tsquery.substring(0, tsquery.length - 1);
             tsquery = tsquery + ']&threshold=' + DBConnection.THRESHOLD + "&";
             var finalquery = CONFIG.PROXY_ADDRESS + "/getEventCascade" + tsquery + geofiltersquery;
-            //console.log(finalquery);
             DBConnection.sendQuery(finalquery, "ecQuery", false, all_ids, executeAgain, true);
             DBConnection.cascadeDepth++;
         }
@@ -268,6 +529,8 @@ var DBConnection = /** @class */ (function () {
             DBConnection.shapeQuery(false, executeAgain, true);
         }
         else {
+            // makes the analysing button visible
+            $('#analysingBtn').removeClass("invisible");
             MultiPathLine.deleteAllLines();
             DBConnection.reverse_cascade_active = true;
             if (DBConnection.cascadeDepth > 1) {
@@ -307,10 +570,9 @@ var DBConnection = /** @class */ (function () {
                 expandfilters = FilterArea.getExpandFilters();
                 DBConnection.reverse_cascade_expandfilters.push(expandfilters);
             }
-            var sportfilter = window.location.search.substr(1).split('=')[1];
+            var sportfilter = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
             var filters_1 = '&eventFilters={' + expandfilters + "}&teamFilters={}&playerFilters={}&periodFilters={}&sportFilter={'sport':" + sportfilter + "}&matchFilters={}&timeFilter={}";
             var finalquery = CONFIG.PROXY_ADDRESS + "/getEventCascade" + tsquery + geofiltersquery + filters_1;
-            //console.log(finalquery);
             DBConnection.sendQuery(finalquery, "ecQuery", true, all_ids, executeAgain, true);
             DBConnection.cascadeDepth++;
             FilterArea.resetExpandFilter();
@@ -322,6 +584,8 @@ var DBConnection = /** @class */ (function () {
      *  This function executes a motion path query.
      */
     DBConnection.motionPath = function () {
+        // makes the analysing button visible
+        $('#analysingBtn').removeClass("invisible");
         var shape_input = DrawingArea.active_objects[0].getSelection();
         DrawingArea.active_objects[0].manipulateMotionPathFilter();
         DBConnection.sendQuery(DBConnection.getCustomURL(shape_input, "/getMotionPath?") + DrawingArea.active_objects[0].getFilterQuery() + DBConnection.getMatchFilter(), "mpQuery", false, [], 0, false);
@@ -333,6 +597,16 @@ var DBConnection = /** @class */ (function () {
         var shape_input = DrawingArea.getFullAreaSelection();
         MultiPathLineWithArrow.clearLines();
         DBConnection.sendQuery(DBConnection.getCustomURL(shape_input, "/getMotionPath?") + OffBallActivities.getFilterQuery() + DBConnection.getMatchFilter(), "mpQueryWithArrows", false, [], 0, false);
+    };
+    DBConnection.getCustomEntryURL = function (custom_url) {
+        var shape_input = ["rectangle", -30.5, 15, 30.5, -15];
+        custom_url = CONFIG.PROXY_ADDRESS + custom_url + DBConnection.getRectQuery(shape_input);
+        return custom_url;
+    };
+    DBConnection.getCustomShiftURL = function (custom_url) {
+        var shape_input = ["", null, null, null, null];
+        custom_url = CONFIG.PROXY_ADDRESS + custom_url + DBConnection.getRectQuery(shape_input);
+        return custom_url;
     };
     /**
      * This function is called by the shapeQuery function and combines URL and query.
@@ -433,6 +707,7 @@ var DBConnection = /** @class */ (function () {
      */
     DBConnection.fillResults = function (json, cascade, highlightList) {
         var counter = ResultList.countElements() + 1;
+        // TODO: Optimization required, long duration for large shape queries
         for (var _i = 0, _a = json.result[0]; _i < _a.length; _i++) {
             var object = _a[_i];
             var time = DBConnection.convertMillisToTime(object.details[0].ts);
@@ -455,25 +730,62 @@ var DBConnection = /** @class */ (function () {
         }
         ResultList.fillTimeline(highlightList);
     };
+    DBConnection.fillHeatmapResults = function (json, cascade, highlightList) {
+        var count = ResultList.countElements() + 1;
+        for (var _i = 0, _a = json.result[0]; _i < _a.length; _i++) {
+            var object = _a[_i];
+            var time = DBConnection.convertMillisToTime(object.details[0].ts);
+            var id = object.details[0]._id.$oid;
+            var eventtype = object.details[0].type;
+            var coords = object.details[0].xyCoords;
+            var matchID = object.details[0]["matchId"];
+            var players = object.details[0]["playerIds"];
+            if (EventMarker.getMarker(id) == null) { // if no marker with this id exists, then add it to the canvas
+                var ec = new EventChain([], time, object.details[0].videoTs, count, matchID);
+                var em = new EventMarker(coords[0], id, object.details[0].ts, time, ec);
+                if (coords.length == 2 && !cascade) {
+                    var arrow = new Arrow(coords, ec);
+                    ec.setArrow(arrow);
+                }
+                ec.addEventMarker(em);
+                ResultList.addResult(new Result(count, time, object.details[0].videoTs, coords[0], coords[1], eventtype, players, ec));
+            }
+            count++;
+        }
+        ResultList.fillTimeline(highlightList);
+        Analysis.entryHeatmap(json);
+    };
     DBConnection.resetEventCascadeQueryArray = function () {
         DBConnection.eventIDs = [];
     };
     DBConnection.saveEcQuery = function (queryName) {
         var method = "/saveEventCascade";
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
         var eventIds = [];
         for (var _i = 0, _a = DBConnection.active_eventmarkers; _i < _a.length; _i++) {
             var em = _a[_i];
             eventIds.push(em.markerid);
         }
-        var query = CONFIG.PROXY_ADDRESS + method + "?eventIds=" + eventIds + "&queryName=" + queryName;
-        console.log(query);
+        var query = CONFIG.PROXY_ADDRESS + method + "?eventIds=" + eventIds + "&queryName=" + queryName + "&querySport=" + sport;
         DBConnection.sendQuery(query, method, false, [queryName], 0, false);
     };
     DBConnection.saveNormalQuery = function (queryName) {
         var method = "/saveEventCascade";
-        var query = CONFIG.PROXY_ADDRESS + method + "?eventIds=" + DBConnection.eventIDs + "&queryName=" + queryName;
-        console.log(query);
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        var query = CONFIG.PROXY_ADDRESS + method + "?eventIds=" + DBConnection.eventIDs + "&queryName=" + queryName + "&querySport=" + sport;
         DBConnection.sendQuery(query, method, false, [queryName], 0, false);
+    };
+    /**
+     * Calls the Server to save a new User
+     * @param userRole
+     * @param userName
+     */
+    DBConnection.saveUser = function (userRole, userName) {
+        var method = "/saveUser";
+        var userInfo = "?userRole=" + userRole + "&userName=" + userName;
+        var defaultSettings = '&pressingDurationThreshold=' + CONFIG.PRESSING_DURATION_THRESHOLD + '&pressingIndexThreshold=' + CONFIG.PRESSING_INDEX_THRESHOLD;
+        var query = CONFIG.PROXY_ADDRESS + method + userInfo + defaultSettings;
+        DBConnection.sendQuery(query, method, false, [], 0, false);
     };
     /**
      * This function takes the REST response of a forward event cascade and fills the delivered data into the result list and into the drawing area.
@@ -483,13 +795,13 @@ var DBConnection = /** @class */ (function () {
         var counter = 1;
         ResultList.clearResultList();
         // check if returned json is not empty
+        // @ts-ignore
         if (Object.keys(json).length > 0) {
             var results = json.result;
             //results = DBConnection.checkEventChainMerge(results, reverse);
             for (var _i = 0, results_1 = results; _i < results_1.length; _i++) {
                 var result = results_1[_i];
                 var id = result[0].id[0];
-                //console.log("ID: " + id);
                 //This is if the user would save the query then we save all the event IDs
                 if (DBConnection.eventIDs.indexOf(id) == -1) { //check whether an eventID is already present in the array
                     DBConnection.eventIDs.push(id);
@@ -497,7 +809,6 @@ var DBConnection = /** @class */ (function () {
                 used_ids.push(id);
                 var ec = EventChain.searchEventMarkerID(id);
                 var location_1 = result[0].details[0].xyCoords[0];
-                //console.log("location: " + location + " ID: " + id);
                 var new_id = result[0].details[0]._id.$oid;
                 var players = result[0].details[0]["playerIds"];
                 // if reverse event cascade the time of the EventChain has to be changed (start point is earlier)
@@ -506,10 +817,17 @@ var DBConnection = /** @class */ (function () {
                 var period = "0";
                 var time1min = 0;
                 var eventtype = void 0;
+                var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
                 if (reverse) {
                     eventtype = "Reverse event cascade";
                     var videotime = result[0].details[0].videoTs;
-                    var decimal = (result[0].details[0].ts / 1000) / 60;
+                    var decimal = void 0;
+                    if (sport === "football") {
+                        decimal = (result[0].details[0].ts / 1000) / 60; //milliseconds
+                    }
+                    if (sport === "icehockey") {
+                        decimal = (result[0].details[0].ts) / 60; //seconds
+                    }
                     var minutes = Math.floor(decimal);
                     var seconds = Math.floor((decimal - minutes) * 60);
                     var min = minutes.toString();
@@ -555,6 +873,8 @@ var DBConnection = /** @class */ (function () {
         }
         DrawingArea.field.renderAll();
         ResultList.fillTimeline(false);
+        //hides the analysing button
+        $('#analysingBtn').addClass("invisible");
     };
     /**
      * This function sorts and adds the results of the motion path query to the drawing- and result area.
@@ -592,7 +912,6 @@ var DBConnection = /** @class */ (function () {
             var decimal = (result.startTime / 1000) / 60; // timestamp comes in milliseconds, divide by 1000 and divide by 60 results in decimal minutes
             var minutes = Math.floor(decimal); // cutting away the decimal part gives the amount of minutes
             var seconds = Math.floor((decimal - minutes) * 60); // subtracting the amount of minutes and multiplying by 60 results in the remaining amount of seconds
-            //console.log("Calculation okay !");
             var min = minutes.toString();
             var sec = seconds.toString();
             if (minutes < 10) {
@@ -640,7 +959,22 @@ var DBConnection = /** @class */ (function () {
                 var matchId = result["matchId"][0];
                 if (withArrow) {
                     var playerId = result.playerId[0];
-                    new MultiPathLineWithArrow(locations, time, result.videoTime[0], counter, eventtype, period, matchId, playerId).register();
+                    // if paths are long enough
+                    if (locations.length > 1) {
+                        new MultiPathLineWithArrow(locations, time, result.videoTime[0], counter, eventtype, period, matchId, playerId).register();
+                    }
+                    // if not we have to set two fake coordinates to allow the drawing of an arrow
+                    else {
+                        var xFake = void 0;
+                        var yFake = void 0;
+                        for (var _b = 0, points_2 = points; _b < points_2.length; _b++) {
+                            var location_3 = points_2[_b];
+                            xFake = parseFloat(location_3[0]) + 0.5;
+                            yFake = parseFloat(location_3[1]) + 0.5;
+                        }
+                        locations.push([xFake, yFake]);
+                        new MultiPathLineWithArrow(locations, time, result.videoTime[0], counter, eventtype, period, matchId, playerId).register();
+                    }
                 }
                 else {
                     new MultiPathLine(locations, time, result.videoTime[0], counter, eventtype, period, matchId).register();
@@ -655,6 +989,8 @@ var DBConnection = /** @class */ (function () {
         else {
             ResultList.fillTimeline(false);
         }
+        //hides the analysing button
+        $('#analysingBtn').addClass("invisible");
     };
     /**
      * This function checks all received IDs of the database, if there are duplicates it will merge those two event chains.
@@ -703,6 +1039,29 @@ var DBConnection = /** @class */ (function () {
      * Every event type, player name and team name is going to be delivered.
      */
     DBConnection.getFilter = function (method) {
+        var query;
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        // important only if matchFilterChanged
+        if (method == "/getTeamUpdate") {
+            var match = DBConnection.getMatchFilter();
+            method = "/getTeams?sportFilter=" + sport;
+            query = CONFIG.PROXY_ADDRESS + method + "&" + match.substr(1);
+        }
+        else if (method == "/getPlayerUpdate") {
+            var match = DBConnection.getMatchFilter();
+            method = "/getPlayers?sportFilter=" + sport;
+            query = CONFIG.PROXY_ADDRESS + method + "&" + match.substr(1);
+        }
+        // regular query when loading UI
+        else {
+            query = CONFIG.PROXY_ADDRESS + method;
+        }
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * This function allows to fill the user list in the dropdown.
+     */
+    DBConnection.getUsers = function (method) {
         var query = CONFIG.PROXY_ADDRESS + method;
         DBConnection.sendQuery(query, method, false, [], 0, false);
     };
@@ -725,8 +1084,28 @@ var DBConnection = /** @class */ (function () {
         var res = '&matchFilters={' + FilterArea.getMatchFilters() + "}";
         return res;
     };
+    DBConnection.getTeamFilter = function () {
+        var res = '&teamFilters={' + FilterArea.getTeamFilters() + "}";
+        return res;
+    };
+    DBConnection.getPeriodFilter = function () {
+        var res = '&periodFilters={' + FilterArea.getPeriodFilters() + "}";
+        return res;
+    };
+    DBConnection.getPlayerFilter = function () {
+        var res = '&playerFilters={' + FilterArea.getPlayerFilters() + "}";
+        return res;
+    };
+    DBConnection.getEventFilter = function () {
+        var res = '&eventFilters={' + FilterArea.getEventFilters() + "}";
+        return res;
+    };
+    DBConnection.getSportFilter = function () {
+        var res = '&sportFilter={\'sport\':' + window.location.search.substring(window.location.search.lastIndexOf("=") + 1) + '}';
+        return res;
+    };
     DBConnection.getHighlights = function () {
-        var sportfilter = window.location.search.substr(1).split('=')[1];
+        var sportfilter = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
         var eventfilter = "";
         for (var i in CONFIG.HIGHLIGHT_EVENTS) {
             eventfilter = eventfilter + '"' + i + '":"' + CONFIG.HIGHLIGHT_EVENTS[i] + '",';
@@ -736,21 +1115,110 @@ var DBConnection = /** @class */ (function () {
         DBConnection.sendQuery(query, "highlightQuery", false, [], 0, false);
     };
     DBConnection.fillHighlights = function (json) {
-        // For future purposes: if there are any dominance or other kind of phases detected
-        /*for(let d of json.matchDetails[0].phases){
-            let start = DBConnection.convertMillisToTime(parseInt(d.start));
-            let end = DBConnection.convertMillisToTime(parseInt(d.end));
-            let text = d.phase
-            Timeline.addHighlight(start,end,text,2)
-        }
-        for(let d of json.matchDetails[0].dominance){
-            let start = DBConnection.convertMillisToTime(parseInt(d.start));
-            let end = DBConnection.convertMillisToTime(parseInt(d.end));
-            let text = d.team
-            Timeline.addHighlight(start,end,text,3)
-        }
-        */
         DBConnection.fillResults(json, false, true);
+    };
+    /**
+     * This function takes the results of the pressing analysis.
+     */
+    DBConnection.fillPressingPhases = function (json) {
+        var style;
+        var info;
+        var phase;
+        Phases.clearPressingPhases();
+        //Loops through the results (pressure phases)
+        for (var i in json) {
+            var stats = json[i];
+            var time = stats[0]["start"];
+            var start_time = DBConnection.convertMillisToTime(stats[0]["start"]);
+            var end_time = DBConnection.convertMillisToTime(stats[0]["end"]);
+            var duration = DBConnection.convertMillisToTime(stats[0]["duration"]);
+            var video_ts = stats[0]["videoTs"];
+            var teamID = stats[0]["team"];
+            var matchID = stats[0]["matchId"];
+            var phaseID = stats[0]["phaseId"];
+            var avgPressure = stats[0]["avgPressure"];
+            var minPressure = stats[0]["minPressure"];
+            var maxPressure = stats[0]["maxPressure"];
+            var venue = stats[0]["venue"];
+            var startX = stats[0]["startX"];
+            var startY = stats[0]["startY"];
+            // put some information in the info variable for the hovering
+            info = "Phase: " + phaseID + "<br>" + "PI (AVG): " + avgPressure + "<br>" + "PI (MIN): " + minPressure + "<br>" + "PI (MAX): " + maxPressure + "<br>" + "Duration: " + duration;
+            // Set Color for boxes in timeline
+            if (venue == "Home") {
+                if (CONFIG.COLOR_TEAM_A_STANDARD != "black") {
+                    style = "color: black; background-color: " + CONFIG.COLOR_TEAM_A_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_A_STANDARD;
+                }
+                else {
+                    style = "color: white; background-color: " + CONFIG.COLOR_TEAM_A_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_A_STANDARD;
+                }
+            }
+            else {
+                if (CONFIG.COLOR_TEAM_B_STANDARD != "black") {
+                    style = "color: black; background-color: " + CONFIG.COLOR_TEAM_B_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_B_STANDARD;
+                }
+                else {
+                    style = "color: white; background-color: " + CONFIG.COLOR_TEAM_B_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_B_STANDARD;
+                }
+            }
+            phase = new Phases(start_time, end_time, video_ts, time, startX, startY, phaseID, matchID, teamID, venue, info, style);
+            Phases.pressing_phases.push(phase);
+        }
+        // Add Phases to ResultList and to Highlights
+        Phases.sortPressingPhases();
+        Phases.addPressingPhases();
+        //hides the analysing button
+        $('#analysingBtn').addClass("invisible");
+    };
+    /**
+     * This function takes the results of the transition analysis.
+     */
+    DBConnection.fillTransitionPhases = function (json) {
+        var style;
+        var info;
+        var phase;
+        Phases.clearTransitionPhases();
+        //Loops through the results (transition phases)
+        for (var i in json) {
+            var stats = json[i];
+            var time = stats[0]["start"];
+            var start_time = DBConnection.convertMillisToTime(stats[0]["start"]);
+            var end_time = DBConnection.convertMillisToTime(stats[0]["end"]);
+            var duration = DBConnection.convertMillisToTime(stats[0]["duration"]);
+            var video_ts = stats[0]["videoTs"];
+            var teamID = stats[0]["team"];
+            var matchID = stats[0]["matchId"];
+            var phaseID = stats[0]["phaseId"];
+            var venue = stats[0]["venue"];
+            var startX = stats[0]["startX"];
+            var startY = stats[0]["startY"];
+            // put some information in the info variable for the hovering
+            info = "Phase: " + phaseID + "<br>" + "Duration: " + duration;
+            // Set Color for boxes in timeline
+            if (venue == "Home") {
+                if (CONFIG.COLOR_TEAM_A_STANDARD != "black") {
+                    style = "color: black; background-color: " + CONFIG.COLOR_TEAM_A_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_A_STANDARD;
+                }
+                else {
+                    style = "color: white; background-color: " + CONFIG.COLOR_TEAM_A_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_A_STANDARD;
+                }
+            }
+            else {
+                if (CONFIG.COLOR_TEAM_B_STANDARD != "black") {
+                    style = "color: black; background-color: " + CONFIG.COLOR_TEAM_B_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_B_STANDARD;
+                }
+                else {
+                    style = "color: white; background-color: " + CONFIG.COLOR_TEAM_B_STANDARD + "; border-color: " + CONFIG.COLOR_TEAM_B_STANDARD;
+                }
+            }
+            phase = new Phases(start_time, end_time, video_ts, time, startX, startY, phaseID, matchID, teamID, venue, info, style);
+            Phases.transition_phases.push(phase);
+        }
+        // Add Phases to ResultList and to Highlights
+        Phases.sortTransitionPhases();
+        Phases.addTransitionPhases();
+        //hides the analysing button
+        $('#analysingBtn').addClass("invisible");
     };
     DBConnection.convertMillisToTime = function (ts) {
         var decimal = (ts / 1000) / 60; // timestamp comes in milliseconds, divide by 1000 and divide by 60 results in decimal minutes
@@ -765,6 +1233,52 @@ var DBConnection = /** @class */ (function () {
             sec = "0" + seconds;
         }
         return min + ":" + sec;
+    };
+    /**
+     * This function calls the server for getting the teamColors from the MongoDB
+     */
+    DBConnection.getTeamSettings = function () {
+        var method = "/getTeamSettings";
+        var match = 'matchFilters={' + FilterArea.getMatchFilters() + "}";
+        var query = CONFIG.PROXY_ADDRESS + method + "?" + match;
+        DBConnection.sendQuery(query, method, false, [], 0, false);
+    };
+    /**
+     * This function takes the REST response and sets the teamColors new for visualization in UI
+     */
+    DBConnection.setTeamSettings = function (json) {
+        CONFIG.COLOR_TEAM_A_STANDARD = json["Home"].toString();
+        CONFIG.COLOR_TEAM_B_STANDARD = json["Away"].toString();
+        CONFIG.TEAM_A_Name = json["HomeName"].toString();
+        CONFIG.TEAM_A_CHAR = json["HomeID"].toString();
+        CONFIG.TEAM_B_Name = json["AwayName"].toString();
+        CONFIG.TEAM_B_CHAR = json["AwayID"].toString();
+        // Offball Label Update
+        OffBallActivities.updateTeamLabelColors();
+        OffBallActivities.updateTeamLabelNames();
+        Graph2d.updateColors();
+        Network.updateColors();
+    };
+    /**
+     * This function sets the teamColors back to default values from the CONFIG file
+     * and updates the colors of the offballTeamLabels in the UI.
+     */
+    DBConnection.resetTeamSettings = function () {
+        CONFIG.COLOR_TEAM_A_STANDARD = "rgba(220,0,0,1)";
+        CONFIG.COLOR_TEAM_B_STANDARD = "rgba(220,0,0,1)";
+        CONFIG.COLOR_TEAM_A_HIGHLIGHTED = "rgba(255,112,166,1)";
+        CONFIG.COLOR_TEAM_A_HOVER = "rgba(255,50,50,1)";
+        CONFIG.COLOR_TEAM_B_STANDARD = "rgba(0,0,220,1)";
+        CONFIG.COLOR_TEAM_B_HIGHLIGHTED = "rgba(255,112,166,1)";
+        CONFIG.COLOR_TEAM_B_HOVER = "rgba(50,50,255,1)";
+        CONFIG.TEAM_A_Name = "Team A";
+        CONFIG.TEAM_A_CHAR = "A";
+        CONFIG.TEAM_B_Name = "Team B";
+        CONFIG.TEAM_B_CHAR = "B";
+        OffBallActivities.updateTeamLabelColors();
+        OffBallActivities.resetTeamLabelNames();
+        Graph2d.updateColors();
+        Network.updateColors();
     };
     DBConnection.cascadeDepth = 0;
     DBConnection.lastActiveLength = 1;

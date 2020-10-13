@@ -10,7 +10,9 @@
     "target": "es5"
   },
   "files": [
+    "Analysis.ts",
     "Arrow.ts",
+    "BoundingBox.ts",
     "Circle.ts",
     "CONFIG.ts",
     "DBConnection.ts",
@@ -21,9 +23,13 @@
     "EventMarker.ts",
     "FilterArea.ts",
     "FreehandMotionPath.ts",
+    "Graph2d.ts",
     "main.ts",
     "MultiPathLine.ts",
     "MultiPathLineWithArrow.ts",
+    "Network.ts",
+    "OffBallActivities.ts",
+    "Phases.ts",
     "Polygon.ts",
     "Rectangle.ts",
     "Result.ts",
@@ -31,9 +37,7 @@
     "SaveQuery.ts",
     "StraightMotionPath.ts",
     "Timeline.ts",
-    "VideoArea.ts",
-    "Analysis.ts",
-    "OffBallActivities.ts",
-    "BoundingBox.ts"
+    "UserSettings.ts",
+    "VideoArea.ts"
   ]
 }

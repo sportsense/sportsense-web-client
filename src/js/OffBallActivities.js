@@ -102,15 +102,16 @@ var OffBallActivities = /** @class */ (function () {
      */
     OffBallActivities.updatePlayerSelection = function () {
         var selection = [];
+        //console.log(matchFilter);
         for (var _i = 0, _a = this.playerOptions; _i < _a.length; _i++) {
             var playerOption = _a[_i];
             var i = playerOption.indexOf(" [ID:");
             if (i >= 0) {
                 var teamChar = playerOption.substr(i + 5, 1); // extracting the team char from the id
-                if (OffBallActivities.teamAIsActive && (teamChar == "A" || teamChar == "C")) { // this player belongs to theam A
+                if (OffBallActivities.teamAIsActive && (teamChar == CONFIG.TEAM_A_CHAR)) { // this player belongs to team A
                     selection.push(playerOption);
                 }
-                if (teamChar == "B" || teamChar == "D") { // either this player belongs to team B or it is the ball
+                else if (teamChar == CONFIG.TEAM_B_CHAR) { // either this player belongs to team B or it is the ball
                     if (playerOption.substr(i + 5, 4) == "BALL") { // we only take the ball into selection if ball button is active
                         if (OffBallActivities.ballIsActive) {
                             selection.push(playerOption);
@@ -118,6 +119,13 @@ var OffBallActivities = /** @class */ (function () {
                     }
                     else { // it's a player and not the ball
                         if (OffBallActivities.teamBIsActive) {
+                            selection.push(playerOption);
+                        }
+                    }
+                }
+                else if (teamChar == "B") { // if we have team label C, D, etc. we have to do the extra check for the Ball here
+                    if (playerOption.substr(i + 5, 4) == "BALL") { // we only take the ball into selection if ball button is active
+                        if (OffBallActivities.ballIsActive) {
                             selection.push(playerOption);
                         }
                     }
@@ -189,8 +197,11 @@ var OffBallActivities = /** @class */ (function () {
      * This method mirrors the method FilterArea.fill() in structure and methodology.
      */
     OffBallActivities.fill = function (json, method) {
-        if (method == "/getPlayers") {
+        var sportFilter = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        //if (method == "/getPlayers?sportFilter=" + sportFilter) {
+        if (method == "/getPlayers?sportFilter=" + sportFilter) {
             this.playerOptions = [];
+            OffBallActivities.playerFilter.empty();
             var balloptiontext = "Ball movement [ID:BALL]";
             this.playerOptions.push(balloptiontext);
             OffBallActivities.playerFilter.append(new Option(balloptiontext));
@@ -199,6 +210,7 @@ var OffBallActivities = /** @class */ (function () {
                 this.playerOptions.push(optiontext);
                 OffBallActivities.playerFilter.append(new Option(optiontext));
             }
+            OffBallActivities.playerFilter.selectpicker('refresh');
         }
     };
     /**
@@ -206,12 +218,12 @@ var OffBallActivities = /** @class */ (function () {
      */
     OffBallActivities.getFilterQuery = function () {
         var sportFilter = window.location.search.substr(1).split('=')[1];
-        var res = '&eventFilters={' + '' + "}";
-        res += '&teamFilters={' + '' + "}";
-        res += '&playerFilters={' + OffBallActivities.getPlayerFilters() + "}";
-        res += '&periodFilters={' + '' + "}";
+        var res = '&eventFilters={' + '' + '}';
+        res += '&teamFilters={' + '' + '}';
+        res += '&playerFilters={' + OffBallActivities.getPlayerFilters() + '}';
+        res += '&periodFilters={' + '' + '}';
         res += '&timeFilter={' + OffBallActivities.getTimeFilter() + '}';
-        res += '&sportFilter={' + "'sport':" + sportFilter + "}";
+        res += '&sportFilter={' + "'sport':" + sportFilter + '}';
         res += '&matchIDFilter=' + OffBallActivities.getCurrentEventMatchID();
         res += '&minPathLength={"true"}';
         return res;
@@ -222,8 +234,8 @@ var OffBallActivities = /** @class */ (function () {
      */
     OffBallActivities.getPlayerFilters = function () {
         var title = document.getElementById("offball_playerfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
+        var res = "";
         if (title != "Player filter") {
-            var res = "";
             var list = title.split(", ");
             for (var i in list) {
                 var id = list[i].match(/\[(.*?)\]/)[1].split(":")[1];
@@ -232,7 +244,10 @@ var OffBallActivities = /** @class */ (function () {
             return res.substring(0, res.length - 1);
         }
         else {
-            return "";
+            // by default the ball is selected and its trajectory is visualized on the canvas
+            return "filter0: BALL";
+            // alternative to have no trajectory visualized on the canvas: works, but throws an error
+            // return res;
         }
     };
     /**
@@ -320,6 +335,27 @@ var OffBallActivities = /** @class */ (function () {
      */
     OffBallActivities.getCurrentEventMatchID = function () {
         return this.currentEvent.matchId;
+    };
+    /**
+     * Updates the color of the labels according to the team Colors
+     */
+    OffBallActivities.updateTeamLabelColors = function () {
+        $('#offball_team_a_label').css('color', CONFIG.COLOR_TEAM_A_STANDARD);
+        $('#offball_team_b_label').css('color', CONFIG.COLOR_TEAM_B_STANDARD);
+    };
+    /**
+     * Updates the names of the labels according to the team Names
+     */
+    OffBallActivities.updateTeamLabelNames = function () {
+        document.getElementById('offball_team_a_label').innerHTML = CONFIG.TEAM_A_Name;
+        document.getElementById('offball_team_b_label').innerHTML = CONFIG.TEAM_B_Name;
+    };
+    /**
+     * Resets the names of the labels
+     */
+    OffBallActivities.resetTeamLabelNames = function () {
+        document.getElementById('offball_team_a_label').innerHTML = "Team A";
+        document.getElementById('offball_team_b_label').innerHTML = "Team B";
     };
     OffBallActivities.currentEvent = undefined;
     return OffBallActivities;

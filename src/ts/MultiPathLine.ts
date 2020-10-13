@@ -23,7 +23,7 @@ class MultiPathLine {
 
     protected line: any;
     public time: string;
-    public videotime: number;
+    public video_time: number;
     public matchId: string;
     protected id: number;
     protected elem_id: string;
@@ -39,12 +39,11 @@ class MultiPathLine {
 
     constructor(points: any[], time: string, videotime: number, id: number, eventtype, period, matchId) {
         this.time = time;
-        this.videotime = videotime;
+        this.video_time = videotime;
         this.id = id;
         this.elem_id = "";
         this.matchId = matchId;
         this.eventtype = eventtype;
-        //console.log("constr: " + points);
 
         this.build(points);
     }
@@ -68,8 +67,7 @@ class MultiPathLine {
 
         this.line.on('mousedown', function (e) {
             let mpl: MultiPathLine = e.target.mpl;
-            //console.log("MPL-MatchID: "+ mpl.matchId);
-            videoarea.setVideoTime(mpl.videotime, mpl.matchId);
+            videoarea.setVideoTime(mpl.video_time, mpl.matchId);
             mpl.changeActiveLine();
             //ResultList.set_active(mpl.elem_id);
         });
@@ -96,7 +94,7 @@ class MultiPathLine {
 
     public register(): void {
         DrawingArea.field.add(this.line);
-        ResultList.addResult(new Result(this.id.toString(), this.time, this.videotime,location[0],location[1],this.eventtype,[],this));
+        ResultList.addResult(new Result(this.id.toString(), this.time, this.video_time,location[0],location[1],this.eventtype,[],this));
         MultiPathLine.addLine(this);
     }
 

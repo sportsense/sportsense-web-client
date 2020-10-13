@@ -143,7 +143,6 @@ var DrawingButtons = /** @class */ (function () {
         return [active_btn, ec_result, DrawingButtons.active_drawing_mode];
     };
     DrawingButtons.getDrawingDropdownValue = function () {
-        //console.log(this.drawing_dropdown.val());
         return this.drawing_dropdown.val();
     };
     /**

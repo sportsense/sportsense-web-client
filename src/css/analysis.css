@@ -20,6 +20,10 @@
     width:100%;
     height:50%;
 }
+#teamAnalysis {
+     width:100%;
+     height:50%;
+}
 .row-g {
     width:100%;
     display: inline-flex;
@@ -44,6 +48,10 @@
     color: white;
 }
 .players-g {
+    width:100%;
+    display: inline-flex;
+}
+.teams-g {
     width:100%;
     display: inline-flex;
 }

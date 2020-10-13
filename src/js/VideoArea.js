@@ -24,10 +24,10 @@ var VideoArea = /** @class */ (function () {
         videojs("video").ready(function () {
             VideoArea.videoplayer = this;
             if (window.location.search.substr(1).split('=')[1] === "football") {
-                VideoArea.videoplayer.src({ type: "video/mp4", src: "./videos/SUI-CRO.mp4" });
+                VideoArea.videoplayer.src({ type: "video/mp4", src: "./videos/POR-SUI.mp4" });
             }
             else if (window.location.search.substr(1).split('=')[1] === "icehockey") {
-                VideoArea.videoplayer.src("./videos/usa_swe.mp4");
+                VideoArea.videoplayer.src("./videos/2020-02-21_EHCBiel-Lausanne_u20.mp4");
             }
         });
     }
@@ -48,7 +48,6 @@ var VideoArea = /** @class */ (function () {
      * adjusts the video source each time the match Filter is changed
      */
     VideoArea.prototype.changeVideo = function (key) {
-        //console.log(key,VideoArea.matchid);
         if (key === VideoArea.matchid) {
             return;
         }
@@ -59,7 +58,7 @@ var VideoArea = /** @class */ (function () {
             VideoArea.matchid = key;
         }
     };
-    // SUI-CRO matchID as default matchid
-    VideoArea.matchid = "Match ID: 742569";
+    // POR Match as default matchID
+    VideoArea.matchid = "Match ID: 279384";
     return VideoArea;
 }());

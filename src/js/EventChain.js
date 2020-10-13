@@ -254,7 +254,7 @@ var EventChain = /** @class */ (function () {
         // update the gui
         OffBallActivities.registerActiveEventChain(this);
         // set correct colors for all events
-        EventChain.updateChainColors();
+        //EventChain.updateChainColors();
     };
     /**
      * this function changes the color to blue (or grey, if off-ball-activities are active)

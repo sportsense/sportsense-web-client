@@ -23,12 +23,11 @@ var MultiPathLine = /** @class */ (function () {
         this.color_highlighted = CONFIG.COLOR_HIGHLIGHTED;
         this.color_hover = CONFIG.COLOR_HOVER;
         this.time = time;
-        this.videotime = videotime;
+        this.video_time = videotime;
         this.id = id;
         this.elem_id = "";
         this.matchId = matchId;
         this.eventtype = eventtype;
-        //console.log("constr: " + points);
         this.build(points);
     }
     MultiPathLine.prototype.build = function (points) {
@@ -48,8 +47,7 @@ var MultiPathLine = /** @class */ (function () {
         this.line.set("mpl", this);
         this.line.on('mousedown', function (e) {
             var mpl = e.target.mpl;
-            //console.log("MPL-MatchID: "+ mpl.matchId);
-            videoarea.setVideoTime(mpl.videotime, mpl.matchId);
+            videoarea.setVideoTime(mpl.video_time, mpl.matchId);
             mpl.changeActiveLine();
             //ResultList.set_active(mpl.elem_id);
         });
@@ -74,7 +72,7 @@ var MultiPathLine = /** @class */ (function () {
     };
     MultiPathLine.prototype.register = function () {
         DrawingArea.field.add(this.line);
-        ResultList.addResult(new Result(this.id.toString(), this.time, this.videotime, location[0], location[1], this.eventtype, [], this));
+        ResultList.addResult(new Result(this.id.toString(), this.time, this.video_time, location[0], location[1], this.eventtype, [], this));
         MultiPathLine.addLine(this);
     };
     MultiPathLine.addLine = function (line) {

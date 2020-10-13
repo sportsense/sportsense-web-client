@@ -25,24 +25,29 @@ var CONFIG = /** @class */ (function () {
     // Server settings
     CONFIG.PROXY_ADDRESS = "http://localhost:2222";
     CONFIG.METHOD = "GET";
+    // Team settings
+    CONFIG.TEAM_A_Name = "Team A";
+    CONFIG.TEAM_A_CHAR = "A";
+    CONFIG.TEAM_B_Name = "Team B";
+    CONFIG.TEAM_B_CHAR = "B";
     // Fabric.js drawing colors
-    CONFIG.COLOR_STANDARD = "rgba(32,91,175,1)";
-    CONFIG.COLOR_HIGHLIGHTED = "rgba(255,112,166,1)";
-    CONFIG.COLOR_HOVER = "rgba(114,161,229,1)";
+    CONFIG.COLOR_STANDARD = "#3000C1";
+    CONFIG.COLOR_HIGHLIGHTED = "#FF70A6";
+    CONFIG.COLOR_HOVER = "#72A1E5";
     CONFIG.COLOR_NONE = "rgba(0,0,0,0)";
-    CONFIG.COLOR_SELECTION = "rgba(255,200,0,1)";
-    CONFIG.COLOR_DEACTIVATED = "rgba(149, 165, 166, 1)";
+    CONFIG.COLOR_SELECTION = "#FFC800";
+    CONFIG.COLOR_DEACTIVATED = "#95A5A6";
     CONFIG.COLOR_INVISIBLE = "rgba(0,0,0,0)";
     // Fabric.js drawing colors for off-ball activities
-    CONFIG.COLOR_BALL_STANDARD = "rgba(50,50,50,1)";
-    CONFIG.COLOR_BALL_HIGHLIGHTED = "rgba(80,80,80,1)";
-    CONFIG.COLOR_BALL_HOVER = "rgba(120,120,120,1)";
-    CONFIG.COLOR_TEAM_A_STANDARD = "rgba(220,0,0,1)";
-    CONFIG.COLOR_TEAM_A_HIGHLIGHTED = "rgba(255,112,166,1)";
-    CONFIG.COLOR_TEAM_A_HOVER = "rgba(255,50,50,1)";
-    CONFIG.COLOR_TEAM_B_STANDARD = "rgba(0,0,220,1)";
-    CONFIG.COLOR_TEAM_B_HIGHLIGHTED = "rgba(255,112,166,1)";
-    CONFIG.COLOR_TEAM_B_HOVER = "rgba(50,50,255,1)";
+    CONFIG.COLOR_BALL_STANDARD = "rgba(50,50,50,0.7)";
+    CONFIG.COLOR_BALL_HIGHLIGHTED = "#505050";
+    CONFIG.COLOR_BALL_HOVER = "#787878";
+    CONFIG.COLOR_TEAM_A_STANDARD = "#DC0000";
+    CONFIG.COLOR_TEAM_A_HIGHLIGHTED = "#FF70A6";
+    CONFIG.COLOR_TEAM_A_HOVER = "#FF3232";
+    CONFIG.COLOR_TEAM_B_STANDARD = "#0000DC";
+    CONFIG.COLOR_TEAM_B_HIGHLIGHTED = "#FF70A6";
+    CONFIG.COLOR_TEAM_B_HOVER = "#3232FF";
     CONFIG.COLOR_POLYGON_START = "rgba(60,180,255,0.8)";
     CONFIG.COLOR_POLYGON_END = "rgba(120,255,255,0.8)";
     // Fabric.js sizes
@@ -75,6 +80,9 @@ var CONFIG = /** @class */ (function () {
     CONFIG.INITIAL_SLIDER2_POSITION = 3000; // initial position of slider2 in milliseconds
     CONFIG.COMPLEX_SLIDER_MIN = -10000; // minimum value of complex slider
     CONFIG.COMPLEX_SLIDER_MAX = 10000; // maximum value of complex slider
+    // Pressure
+    CONFIG.PRESSING_INDEX_THRESHOLD = 2.0; // Pressing Index
+    CONFIG.PRESSING_DURATION_THRESHOLD = 2000; // 2 seconds
     // Highlight events
     CONFIG.HIGHLIGHT_EVENTS = [
         "cornerkickEvent",

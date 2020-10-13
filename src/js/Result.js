@@ -50,16 +50,13 @@ var Result = /** @class */ (function () {
         return this.playerIds;
     };
     Result.prototype.setActive = function () {
-        console.log("setActive");
         if (!this.deactivated) {
             if (this.element instanceof EventChain) {
                 this.element.changeActiveChain();
             }
-            else {
+            else if (this.element instanceof MultiPathLine || this.element instanceof MultiPathLineWithArrow) {
                 this.element.changeActiveLine();
             }
-            //console.log("matchID:" + this.element.matchId);
-            //console.log("videotime:" + this.element.video_time);
             videoarea.setVideoTime(this.element.video_time, this.element.matchId);
         }
     };

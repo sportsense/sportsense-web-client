@@ -21,7 +21,6 @@ class SaveQuery {
 
     public static deleteQuery(queryID: string): void{
         //Send method "deleteQuery with the query ID to the DB, then send back to remove the list element with that ID
-        console.log("Delete this " + queryID);
         DBConnection.editSavedQueries("delQuery", queryID);
 
         let element = document.getElementById(queryID); //To remove the deleted Query from the list
@@ -30,7 +29,6 @@ class SaveQuery {
 
     public static rerunQuery(queryID: string): void{
         //Send to DB the ID of the saved Query, then use the shapeQuery method in the Server and send back the events, also set the Filters to the state.
-        console.log("Rerun this " + queryID);
         DBConnection.editSavedQueries("rerunQuery", queryID);
     }
 
@@ -59,7 +57,6 @@ class SaveQuery {
             DrawingArea.mouseUp(obj.value); //Old version, when the query parameters where saved and not only the eventIDs
         } else if (DBConnection.active_eventmarkers.length != 0){
             DBConnection.saveEcQuery(obj.value);
-            console.log(DBConnection.active_eventmarkers);
         } else {
             DBConnection.saveNormalQuery(obj.value);
         }
@@ -73,17 +70,20 @@ class SaveQuery {
      */
     public static fillQueries(json): void{
         for (let i in json.result) {
+            let querySport: string = json.result[i].sport;
             let queryName: string = json.result[i].name;
             let query_ID: string = json.result[i].qid;
 
-            let li = document.createElement("li");
-            li.className = "li-query";
-            li.id = query_ID;
-            let buttonHTMLString = "<button class=\"btn-sm btn-danger btn-space\"style=\"float: right;\" onclick=\"SaveQuery.deleteQuery(document.getElementById("+ "'" + query_ID + "'" + ").id)\" ><i class=\"fa fa-trash\"></i></button> <input type=\"button\" onclick=\"SaveQuery.rerunQuery(document.getElementById("+"'" + query_ID + "'"+").id)\" value=\"Show\" style=\"float: right;\">";
-            li.innerHTML = queryName + buttonHTMLString;
+            //if(window.location.search.substr(1).split('=')[1] === querySport) {
+                let li = document.createElement("li");
+                li.className = "li-query";
+                li.id = query_ID;
+                let buttonHTMLString = "<button class=\"btn-sm btn-danger btn-space\"style=\"float: right;\" onclick=\"SaveQuery.deleteQuery(document.getElementById(" + "'" + query_ID + "'" + ").id)\" ><i class=\"fa fa-trash\"></i></button> <input type=\"button\" onclick=\"SaveQuery.rerunQuery(document.getElementById(" + "'" + query_ID + "'" + ").id)\" value=\"Show\" style=\"float: right;\">";
+                li.innerHTML = queryName + buttonHTMLString;
 
-            //Adds the player options to the selection as well as the player ID as the value. "<option value= " + playerID + ">" + playerName + "</option>"
-            $('#savedQueries').append(li);
+                //Adds the player options to the selection as well as the player ID as the value. "<option value= " + playerID + ">" + playerName + "</option>"
+                $('#savedQueries').append(li);
+            //}
         }
     }
 }

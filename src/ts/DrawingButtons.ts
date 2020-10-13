@@ -174,7 +174,6 @@ class DrawingButtons {
     }
 
     public static getDrawingDropdownValue(): number {
-        //console.log(this.drawing_dropdown.val());
         return this.drawing_dropdown.val();
     }
 

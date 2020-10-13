@@ -55,18 +55,22 @@ class EventMarker {
 
         this.marker.on('mousedown', function () {
             videoarea.setVideoTime(ec.video_time, ec.matchId);
-            ec.changeActiveChain();
+            if (document.getElementById("pressingAnalysisBtn").innerHTML == "Pressing Phases") {
+                ec.changeActiveChain();
+            }
         });
-
         this.marker.on("mouseover", function () {
             if (ec != EventChain.active_chain) {
-                ec.setChainColor(3);
+                if (document.getElementById("pressingAnalysisBtn").innerHTML == "Pressing Phases") {
+                    ec.setChainColor(3);
+                }
             }
-
         });
         this.marker.on("mouseout", function () {
             if (ec != EventChain.active_chain) {
-                ec.setChainColor(1);
+                if (document.getElementById("pressingAnalysisBtn").innerHTML == "Pressing Phases"){
+                    ec.setChainColor(1);
+                }
             }
         });
 
@@ -111,6 +115,10 @@ class EventMarker {
                 marker.marker.set("stroke", CONFIG.COLOR_HOVER);
             } else if (highlight == 4) {
                 marker.marker.set("stroke", CONFIG.COLOR_INVISIBLE);
+            } else if (highlight == 5) {
+                marker.marker.set("stroke", CONFIG.COLOR_TEAM_A_STANDARD);
+            } else if (highlight == 6) {
+                marker.marker.set("stroke", CONFIG.COLOR_TEAM_B_STANDARD);
             } else {
                 marker.marker.set("stroke", CONFIG.COLOR_DEACTIVATED);
             }

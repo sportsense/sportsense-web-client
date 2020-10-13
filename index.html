@@ -26,19 +26,21 @@
 
     <title>Sport Sense</title>
 
-    <!-- import external css files -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-grid.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-reboot.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.3/dist/css/bootstrap-select.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/video.js@7.6.5/dist/video-js.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/vis@4.21.0-EOL/dist/vis-timeline-graph2d.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/jquery-contextmenu@2.8.1/dist/jquery.contextMenu.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
-
+    <!-- TODO: remove before GitHub release and replace by external css below -->
     <!-- import internal css files -->
     <link href="src/css/zoomingtool.css" rel="stylesheet">
     <link href="src/css/savedQueryList.css" rel="stylesheet">
+
+    <!-- import external css files -->
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-grid.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap-reboot.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.3/dist/css/bootstrap-select.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/video.js@5.18.4/dist/video-js.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/vis@4.21.0-EOL/dist/vis-timeline-graph2d.min.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/jquery-contextmenu@2.8.1/dist/jquery.contextMenu.css" rel="stylesheet">
+     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
+
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -80,7 +82,7 @@
                                 <button class="btn btn-outline-secondary" type="button" id="expand_btn" onclick="DrawingButtons.expandBtn()"
                                     disabled>Expand</button>
                                 <button class="btn btn-warning" type="button" id="undo_btn" onclick="javascript:DrawingArea.undo();">Undo</button>
-                                <button class="btn btn-danger" type="button" id="clear_btn" onclick="javascript:DrawingArea.clearAndReset();">Clear</button>
+                                <button class="btn btn-danger" type="button" id="clear_btn" onclick="javascript:DrawingArea.clearAndReset(); Timeline.resetHighlightlist();">Clear</button>
                             </div>
                         </div>
                     </div>
@@ -96,17 +98,33 @@
                     <div class="invisible input-group mb-3 motionpath-slider" id="motionpath_size_group" style.display="none">
                         <input id="motionpath_size" type="range" min="20" max="250" value="50">
                     </div>
+                    <!--"Analysing..." button for MPs-->
+                    <ul class="nav navbar-nav navbar-right">
+                         <div class="ml-sm-2 mb-3" id="loadingMPresults">
+                             <div>
+                                 <button class="btn btn-primary invisible" id="analysingBtn"><i class="fa fa-circle-o-notch fa-spin"></i> Analysing...
+                                     </button>
+                            </div>
+                        </div>
+                    </ul>
+                    <!--User Selection-->
+                    <ul class="nav navbar-nav navbar-right">
+                         <div class="ml-sm-2 mb-3" id="user_filter">
+                             <div class="dropdown">
+                                 <button class="btn btn-outline-primary dropdown-toggle" id="userMenu" value = 1 type="button" data-toggle="dropdown" onclick="UserSettings.getUsers()">Select User
+                                     <span class="caret"></span></button>
+                                 <div class="dropdown-menu"  id="user_dropdown" aria-labelledby="userMenu">
+                                     <button class="dropdown-item" type="button" value = 2 id="createNewUser" data-toggle="modal" data-target="#userModal">Create New User</button>
+                                     <div class="dropdown-divider"></div>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="alert alert-success alert-dismissible" style="display: none" id="user_saved">
+                            <strong>User Saved</strong>
+                         </div>
+                    </ul>
                 </form>
             </ul>
-
-            <!-- CREDITS Button for the Highlight Icons-- Removed for Licensing -->
-            <!--
-            <ul class="nav navbar-nav navbar-right">
-                <div class="mr-sm-2">
-                    <button type="button" class="btn btn-outline-dark" style="margin-bottom: 15px" data-toggle="modal" data-target="#creditsModal">Credits</button>
-                </div>
-            </ul>
-            -->
         </div>
     </nav>
     <!-- End of navbar -->
@@ -131,75 +149,48 @@
             </div>
 
             <!-- Filter area -->
-            <div class="col-12 col-md-2">
-                <h3 style="text-align:center; margin-top: 10px;">Filters</h3>
-                <div align="center" id="matchfilter">
+            <div class="col-12 col-md-2 filter-container">
+                <h3 style="text-align:left; margin-top: 10px;">Filters</h3>
+                <div align="left" id="matchfilter">
                     <select class="selectpicker filter-padding" id="match_filter" data-live-search="true" multiple
-                        title="No match filter selected" data-size="5">
+                        title="Select Match" data-size="5">
                     </select>
                 </div>
-                <div align="center" id="eventfilter">
+                <div align="left" id="eventfilter">
                     <select class="selectpicker filter-padding filterdropdown" id="event_filter" data-live-search="true"
-                        multiple title="No event filter selected" data-size="5">
+                        multiple title="Select Event" data-size="5">
                     </select>
                 </div>
-                <div align="center" id="teamfilter">
+                <div align="left" id="teamfilter">
                     <select class="selectpicker filter-padding filterdropdown" id="team_filter" data-live-search="true"
-                        multiple title="No team filter selected" data-size="5">
+                        multiple title="Select Team" data-size="5">
                     </select>
                 </div>
-                <div align="center" id="playerfilter">
+                <div align="left" id="playerfilter">
                     <select class="selectpicker filter-padding filterdropdown" id="player_filter" data-live-search="true"
-                        multiple title="No player filter selected" data-size="5">
+                        multiple title="Select Player" data-size="5">
                     </select>
                 </div>
-                <div align="center" id="periodfilter">
+                <div align="left" id="periodfilter">
                     <select class="selectpicker filter-padding filterdropdown" id="period_filter" data-live-search="true"
-                        multiple title="No period filter selected" data-size="5">
-                        <option value="1">First Period</option>
-                        <option value="2">Second Period</option>
-                        <option value="3">Third Period</option>
+                        multiple title="Select Period" data-size="5">
                     </select>
                 </div>
-                <div align="center" id="expandfilter">
+                <div align="left" id="expandfilter">
                     <select class="selectpicker filter-padding filterdropdown" id="expand_filter" disabled
-                        data-live-search="true" multiple title="No expand filter selected" data-size="5">
+                        data-live-search="true" multiple title="Select Expand Filter" data-size="5">
                     </select>
                 </div>
-                <button class="btn btn-primary" type="button" id="saveQuery_btn" data-toggle="modal" data-target="#saveFilterModal">Save</button>
+                <div align="left">
+                    <button class="btn btn-primary" type="button" id="saveQuery_btn" data-toggle="modal" data-target="#saveFilterModal">Save</button>
+                    <button type="button" class="btn btn-secondary" id="findAllEventsBtn" onclick="javascript:DBConnection.findAllQuery(); DrawingArea.clearAndResetDefault()">Find All</button>
+                </div>
                 <p><div class="alert alert-success alert-dismissible" style="display: none" id="saved">
                     <strong>Query Saved</strong>
                 </div>
             </div>
         </div>
         <!-- End of filter area -->
-
-        <!-- Save Filter Modal -->
-        <div class="modal fade" id="saveFilterModal" tabindex="-1" role="dialog" aria-labelledby="saveFilterModalLabel" aria-hidden="true" onsubmit="return false">
-            <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="saveFilterModalLabel">Save Query</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="form-group">
-                                <label for="filter-name" class="col-form-label">Query Name:</label>
-                                <input type="text" class="form-control" id="filter-name">
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" onclick="SaveQuery.saveQuery();" data-dismiss="modal" >Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
 
         <div class="secondrow row">
             <div class="col-12 col-md-5">
@@ -209,33 +200,65 @@
                 </div>
             </div>
             <div class="col-12 col-md-3">
-                <br>
-                <b>Timeline options</b>
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="timeline_filter_switch" onclick="javascript:Timeline.triggerTimeFilter();">
-                    <label class="form-check-label" for="exampleCheck1">Activate timeline filter</label>
-                </div>
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="zooming_filter_switch" onclick="javascript:Timeline.triggerZoomingFilter();">
-                    <label class="form-check-label" for="exampleCheck1">Activate zooming filter</label>
+                <div >
+                    <br>
+                    <b>Timeline options</b>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="timeline_filter_switch" onclick="javascript:Timeline.triggerTimeFilter();">
+                        <label class="form-check-label" for="exampleCheck1">Activate timeline filter</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="zooming_filter_switch" onclick="javascript:Timeline.triggerZoomingFilter();">
+                        <label class="form-check-label" for="exampleCheck1">Activate zooming filter</label>
+                    </div>
                 </div>
 
-                <b class="analyze">Analyze: </b>
-                 <!-- <button type="button" class="btn btn-secondary" id="matchAnalysisBtn" onclick="Analysis.openNewTab('matchAnalysis')">Match</button> -->
-                <button type="button" class="btn btn-secondary" id="playerAnalysisBtn" onclick="Analysis.openNewTab('playerAnalysis')">Players</button>
-                <button type="button" class="btn btn-secondary" id="queryAnalysisBtn" onclick="Analysis.openNewTab('queryAnalysis')">Queries</button>
+                <div>
+                    <b class="analyze">Statistics: </b>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-secondary" id="matchAnalysisBtn" onclick="Analysis.openNewTab('teamAnalysis')">Teams</button>
+                        <button type="button" class="btn btn-secondary" id="playerAnalysisBtn" onclick="Analysis.openNewTab('playerAnalysis')">Players</button>
+                        <button type="button" class="btn btn-secondary" id="queryAnalysisBtn" onclick="Analysis.openNewTab('queryAnalysis')">Queries</button>
+                        <!--<button type="button" class="btn btn-secondary invisible" id="reserveBtnForStatistics"></button>-->
+                    </div>
+                </div>
+                <div >
+                    <b class="analyze">Tactics: </b>
+                    <div class="btn-group" role="group">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-secondary dropdown-toggle" id="teamTacticsMenu" value = 1 type="button" data-toggle="dropdown">Teams
+                                <span class="caret"></span></button>
+                            <div class="dropdown-menu" aria-labelledby="teamTacticsMenu">
+                                <button type="button" class="dropdown-item" id="pressingAnalysis2dBtn" onclick="Analysis.calculatePressingFor2d()">Pressing Index</button>
+                                <button type="button" class="dropdown-item" id="pressingAnalysisBtn" onclick="Analysis.calculatePressing()">Pressing Phases</button>
+                                <button type="button" class="dropdown-item" id="offTransBtn" onclick="Analysis.calculateOffTransition()">Transition Offensive</button>
+                                <button type="button" class="dropdown-item" id="defTransBtn" onclick="Analysis.calculateDefTransition()">Transition Defensive</button>
+                                <button type="button" class="dropdown-item" id="entryEventsBtn" onclick="javascript:DBConnection.entryQuery(); DrawingArea.clearAndResetDefault()">Entries</button>
+                                <button type="button" class="dropdown-item" id="shiftEventsBtn" onclick="javascript:DBConnection.shiftQuery(); DrawingArea.clearAndResetDefault()">Shifts</button>
+                            </div>
+                        </div>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-secondary dropdown-toggle" id="playerTacticsMenu" value = 1 type="button" data-toggle="dropdown">Players
+                                <span class="caret"></span></button>
+                            <div class="dropdown-menu" aria-labelledby="playerTacticsMenu">
+                                <button type="button" class="dropdown-item" id="passNetworkBtn" onclick="Analysis.calculatePlayerPassNetwork()">Pass Network </button>
+                                <button type="button" class="dropdown-item" id="playerSpeedBtn" onclick="Analysis.calculatePlayerSpeed()">Speed Analysis</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="col-12 col-md-4">
                 <div style="display: flex;">
-                    <div style="flex: 50%;">
+                    <div style="flex: 45%;">
                         <br>
                         <div>
-                            <b>Off-ball activities</b>
+                            <b>Movement Analysis</b>
                         </div>
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="offball_activate" onclick="javascript:OffBallActivities.triggerOffBallActivities();">
-                            <label class="form-check-label">Activate off-ball activities</label>
+                            <label class="form-check-label">Activate Movement Analysis</label> <!--Activate off-ball activities-->
                         </div>
                         <div class="offball-toggle" style="display: none;">
                             <div class="form-check">
@@ -263,13 +286,13 @@
                             </div>
                         </div>
                     </div>
-                    <div style="flex: 50%;">
+                    <div style="flex: 55%;">
                         <div class="offball-toggle" style="display: none;">
                             <br>
                             <button class="btn btn-outline-secondary" type="button" id="offball_btn" onclick="OffBallActivities.nextQuery();">Update Off-ball-motion</button>
                             <p> </p><!-- we need that to create space between the button and the selectpicker. interestingly, br does not work here  -->
 
-                            <div align="center" id="offball_playerfilter">
+                            <div align="left" id="offball_playerfilter">
                                 <select class="selectpicker filter-padding filterdropdown" id="offball_player_filter" data-live-search="true"
                                         multiple title="Player filter" data-size="5">
                                 </select>
@@ -293,20 +316,82 @@
             </div>
         </div>
 
-        <div class="thirdrow row">
+        <div id="timeline" class="thirdrow row">
             <div class="col-12 col-md-12">
                 <div id="visualization"></div>
+            </div>
+        </div>
+
+        <div id="graph2d" class="fourthrow row">
+            <div class="col-12 col-md-12">
+                <div id="visualization2d"></div>
             </div>
         </div>
     </div>
 </body>
 
-<!-- Modal -->
+<!-- Save Filter Modal -->
+<div class="modal fade" id="saveFilterModal" tabindex="-1" role="dialog" aria-labelledby="saveFilterModalLabel" aria-hidden="true" onsubmit="return false">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveFilterModalLabel">Save Query</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="filter-name" class="col-form-label">Query Name:</label>
+                        <input type="text" class="form-control" id="filter-name">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="SaveQuery.saveQuery();" data-dismiss="modal" >Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Customize Pressing Modal -->
+<div class="modal fade" id="customizePressingModal" tabindex="-1" role="dialog" aria-labelledby="customizePressingModalLabel" aria-hidden="true" onsubmit="return false">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customizePressingModalLabel">Customize Pressing Analysis</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="filter-name" class="col-form-label">Pressing Threshold (0-10 Pressing Index):</label>
+                        <input type="text" value="2" class="form-control" id="pressingIndexThreshold">
+                        <label for="filter-name" class="col-form-label">Pressing Duration Threshold (0-10 seconds):</label>
+                        <input type="text" value="2" class="form-control" id="pressingDurationThreshold">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="Analysis.setDefaultPressingValues();">Default</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="Analysis.setNewPressingValues();" data-dismiss="modal" >Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
 <div class="modal fade" id="errorMPModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle" style="color:red">Error</h5>
+                <h5 class="modal-title" id="exampleModalLongTitle" style="color:orangered">Warning</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -321,20 +406,34 @@
     </div>
 </div>
 
-<!-- Credits Modal -->
-<div class="modal fade" id="creditsModal" tabindex="-1" role="dialog" aria-hidden="true">
+<!-- User Creation Modal-->
+<div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-body">
-                <p>Single match view vector graphics by:</p>
-                <a href="http://www.freepik.com">Ibrandify / Freepik</a>
+                <form>
+                    <div class="form-group">
+                        <label for="filter-name" class="col-form-label">Select your role in the club</label>
+                        <select class="selectpicker filter-padding filterdropdown form-control" id="role_filter" data-live-search="true"
+                                title="No role selected" data-size="5">
+                            <option value="coach">Coach</option>
+                            <option value="analyst">Analyst</option>
+                            <option value="player">Player</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <label for="filter-name" class="col-form-label">Type in your Username:</label>
+                        <input type="text" value="" class="form-control" id="username">
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="UserSettings.saveUser()" >Save</button>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- import external libraries -->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
@@ -343,7 +442,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.3/js/bootstrap-select.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/video.js@7.3.0/dist/video.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/video.js@5.18.4/dist/video.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vis@4.21.0-EOL/dist/vis.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-contextmenu@2.8.1/dist/jquery.contextMenu.js"></script>
@@ -372,9 +471,13 @@
 <script src="src/js/MultiPathLineWithArrow.js"></script>
 <script src="src/js/VideoArea.js"></script>
 <script src="src/js/Timeline.js"></script>
+<script src="src/js/Graph2d.js"></script>
+<script src="src/js/Network.js"></script>
 <script src="src/js/OffBallActivities.js"></script>
 <script src="src/js/BoundingBox.js"></script>
+<script src="src/js/UserSettings.js"></script>
 <script src="src/js/main.js"></script>
 <script src="src/js/Analysis.js"></script>
+<script src="src/js/Phases.js"></script>
 
 </html>

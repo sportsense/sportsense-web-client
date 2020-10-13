@@ -21,16 +21,69 @@
 var Analysis = /** @class */ (function () {
     function Analysis() {
     }
+    Analysis.initialiseHeatmap = function () {
+        heatmapInstance = undefined;
+    };
+    //TODO: Fix Heatmap Issue
+    Analysis.clearHeatmap = function () {
+        try {
+            var canvas = heatmapInstance._renderer.canvas;
+            $(canvas).remove();
+            heatmapInstance.undefined;
+        }
+        catch (_a) {
+            console.log("heatmap issue!");
+        }
+    };
+    /**
+     * This function is called when displaying the heatmap for the entry events
+     * **/
+    Analysis.entryHeatmap = function (json) {
+        var count = 0;
+        for (var i in json.result[0]) {
+            count++;
+        }
+        heatmapInstance = h337.create({
+            container: document.getElementById('field-container'),
+            radius: 30,
+        });
+        heatmapInstance.setData({ data: [] });
+        //heatmapInstance.clear();
+        var points = [];
+        for (var _i = 0, _a = json.result[0]; _i < _a.length; _i++) {
+            var object = _a[_i];
+            var coords = object.details[0].xyCoords;
+            var canvasCoords = DrawingArea.dbToCanvasCoordinates(coords[0][0], coords[0][1]);
+            var x = Number(canvasCoords[0]);
+            var y = Number(canvasCoords[1]);
+            var point = { x: Math.round(x), y: Math.round(y), value: 5 };
+            points.push(point);
+        }
+        //let temp = {x: 420, y: 300, value: 100};
+        //points.push(temp);
+        var data = {
+            min: 1,
+            max: count,
+            data: points
+        };
+        heatmapInstance.setData(data);
+    };
     Analysis.openNewTab = function (analysis) {
         var link = window.location.href;
         link = link.substr(0, link.lastIndexOf("/"));
+        var user_link = "?user=" + document.getElementById('userMenu').textContent;
+        var sportLink = "&discipline=" + window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
         switch (analysis) {
+            case "teamAnalysis": {
+                link = link + "/teamAnalysis.html" + user_link.trim() + sportLink;
+                break;
+            }
             case "playerAnalysis": {
-                link = link + "/playerAnalysis.html";
+                link = link + "/playerAnalysis.html" + user_link.trim() + sportLink;
                 break;
             }
             case "queryAnalysis": {
-                link = link + "/queryAnalysis.html";
+                link = link + "/queryAnalysis.html" + user_link.trim() + sportLink;
                 break;
             }
             default: {
@@ -40,11 +93,16 @@ var Analysis = /** @class */ (function () {
         }
         window.open(link);
     };
-    //creates the player name cards on the top from the cards array
+    //creates the player and team name cards on the top from the cards array
     Analysis.setCards = function (cards) {
         $('.players-g').html('');
         for (var i = 0; i < Object.keys(cards).length; i++) {
             $('.players-g').append('<div class="card-g" data-name="' + Object.keys(cards)[i] + '"><div class="name-g">' + Object.keys(cards)[i] + '</div></div>');
+            //console.log(Object.keys(cards)[i]);
+        }
+        $('.teams-g').html('');
+        for (var i = 0; i < Object.keys(cards).length; i++) {
+            $('.teams-g').append('<div class="card-g" data-name="' + Object.keys(cards)[i] + '"><div class="name-g">' + Object.keys(cards)[i] + '</div></div>');
             //console.log(Object.keys(cards)[i]);
         }
     };
@@ -76,6 +134,9 @@ var Analysis = /** @class */ (function () {
             var highest = Math.max.apply(Math, values);
             $(n).each(function () {
                 var height = 100 - ($(this).data('value') / highest * 100);
+                if (height > 100) {
+                    height = 100;
+                }
                 $(this).find('.fill-g').css('height', height + '%');
             });
         });
@@ -86,16 +147,11 @@ var Analysis = /** @class */ (function () {
         this.setBars(cards, param, Analysis.colors);
     };
     /**
-     * Calls the method that create the graphs
+     * Calls the method that creates the graphs
      * @param json
      */
     Analysis.analyzePlayers = function (json) {
         var parameterArray = $('select#param_select').val();
-        for (var id in json) {
-            //console.log(id);
-            var name_1 = $("#player_select option:selected[value = " + id + "]").text();
-            //console.log(name);
-        }
         var playersAndStats = "";
         var b = 0;
         for (var i in json) { //Loops through the players stats
@@ -109,25 +165,80 @@ var Analysis = /** @class */ (function () {
             else {
                 combined = '"' + pName + '":[' + stats + '],';
             }
-            //console.log(combined);
             playersAndStats += combined;
             b++;
         }
+        // terminates the loading button
+        document.getElementById("playerAnalysisButton").innerHTML = "Analyze";
         var jsonCards = "{" + playersAndStats + "}";
         var cards = JSON.parse(jsonCards);
         this.updateGraph(cards, parameterArray);
     };
+    /**
+     * Calls the method that creates the graphs
+     * @param json
+     */
+    Analysis.analyzeTeams = function (json) {
+        var parameterArray = $('select#team_param_select').val();
+        var teamsAndStats = "";
+        var b = 0;
+        for (var i in json) { //Loops through the teams stats
+            var stats = json[i];
+            var tName = $("#team_select option:selected[value = " + i + "]").text(); //Selects the team with the ID as value.
+            var combined = "";
+            //So we don't have the comma after the last element
+            if (b === ($("#team_select option:selected").length - 1)) {
+                combined = '"' + tName + '":[' + stats + ']';
+            }
+            else {
+                combined = '"' + tName + '":[' + stats + '],';
+            }
+            teamsAndStats += combined;
+            b++;
+        }
+        // terminates the loading button
+        document.getElementById("teamAnalysisButton").innerHTML = "Analyze";
+        var jsonCards = "{" + teamsAndStats + "}";
+        var cards = JSON.parse(jsonCards);
+        this.updateGraph(cards, parameterArray);
+    };
     //Analyzes the players
-    Analysis.analyze = function () {
-        var playerIdArray = $('select#player_select').val();
-        var parameterArray = $('select#param_select').val();
-        //For some names in the Selection, there were duplicates, this removes them.
-        var playerIdArrayWithoutDuplicates = playerIdArray.filter(function (item, pos) {
-            return playerIdArray.indexOf(item) == pos;
-        });
-        //console.log(parameterArray);
-        //console.log(playerIdArrayWithoutDuplicates);
-        DBConnection.analyzePlayers(playerIdArrayWithoutDuplicates, parameterArray);
+    Analysis.analyzeP = function () {
+        if (($('select#player_select').val() == "") || ($('select#param_select').val() == "")) {
+            $('#error-playermodal-text').text("You have to select at least one player and one parameter for the Player Analysis.");
+            $("#errorPlayerModal").modal();
+            return;
+        }
+        else {
+            // activate loading button
+            document.getElementById("playerAnalysisButton").innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Analysing...';
+            var playerIdArray_1 = $('select#player_select').val();
+            var parameterArray = $('select#param_select').val();
+            var matchArray = $('select#match_select').val();
+            var user = window.location.search.substr(1).split('=')[1];
+            //For some names in the Selection, there were duplicates, this removes them.
+            var playerIdArrayWithoutDuplicates = playerIdArray_1.filter(function (item, pos) {
+                return playerIdArray_1.indexOf(item) == pos;
+            });
+            DBConnection.analyzePlayers(user, playerIdArrayWithoutDuplicates, parameterArray, matchArray);
+        }
+    };
+    //Analyzes the teams
+    Analysis.analyzeT = function () {
+        if (($('select#team_select').val() == "") || ($('select#team_param_select').val() == "")) {
+            $('#error-teammodal-text').text("You have to select at least one team and one parameter for the Team Analysis.");
+            $("#errorTeamModal").modal();
+            return;
+        }
+        else {
+            // activate loading button
+            document.getElementById("teamAnalysisButton").innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Analysing...';
+            var teamIdArray = $('select#team_select').val();
+            var parameterArray = $('select#team_param_select').val();
+            var matchArray = $('select#match_select').val();
+            var user = window.location.search.substr(1).split('=')[1];
+            DBConnection.analyzeTeams(user, teamIdArray, parameterArray, matchArray);
+        }
     };
     Analysis.getParameterNames = function (key) {
         return this.parameterDict[key];
@@ -221,6 +332,31 @@ var Analysis = /** @class */ (function () {
         //throw-ins
         var throwinsData = new Graph("Throw-ins", qty);
         var setPiecesData = new Graph("Set Pieces", qty);
+        var entryData = {
+            label: 'Entries',
+            data: [],
+            yAxisID: "quantity"
+        };
+        var dumpData = {
+            label: 'Dumps',
+            data: [],
+            yAxisID: "quantity"
+        };
+        var shiftData = {
+            label: 'Shifts',
+            data: [],
+            yAxisID: "quantity"
+        };
+        var faceOffData = {
+            label: 'Face Offs',
+            data: [],
+            yAxisID: "quantity"
+        };
+        var shotAtGoalData = {
+            label: 'Shots At Goal',
+            data: [],
+            yAxisID: "quantity"
+        };
         for (var i in json) {
             var queryName = json[i].name;
             queryLabels.push(queryName);
@@ -325,6 +461,16 @@ var Analysis = /** @class */ (function () {
             throwinsData.data.push(throwins);
             var setPieces = throwins + freekicks + cornerkickEvent;
             setPiecesData.data.push(setPieces);
+            var dumps = json[i].dumpEvents;
+            dumpData.data.push(dumps);
+            var entries = json[i].entryEvents;
+            entryData.data.push(entries);
+            var shifts = json[i].shiftEvents;
+            shiftData.data.push(shifts);
+            var faceOffs = json[i].faceOffEvents;
+            faceOffData.data.push(faceOffs);
+            var shotsAtGoal = json[i].shotAtGoalEvents;
+            shotAtGoalData.data.push(shotsAtGoal);
         }
         $('#allCharts').html(''); //To destroy previous charts
         var queryParamArray = $('select#query_param_select').val();
@@ -485,10 +631,56 @@ var Analysis = /** @class */ (function () {
                     title = "Query Overview";
                     graphID = "qOverview";
                     break;
+                case "dumpEvent":
+                    data = {
+                        labels: queryLabels,
+                        datasets: [dumpData]
+                    };
+                    yAxes = [{ id: qty, ticks: { beginAtZero: true } }];
+                    title = "Dumps";
+                    graphID = "Dumps";
+                    break;
+                case "entryEvent":
+                    data = {
+                        labels: queryLabels,
+                        datasets: [entryData]
+                    };
+                    yAxes = [{ id: qty, ticks: { beginAtZero: true } }];
+                    title = "Entries";
+                    graphID = "Entries";
+                    break;
+                case "shiftEvent":
+                    data = {
+                        labels: queryLabels,
+                        datasets: [shiftData]
+                    };
+                    yAxes = [{ id: qty, ticks: { beginAtZero: true } }];
+                    title = "Shifts";
+                    graphID = "Shifts";
+                    break;
+                case "faceOffEvent":
+                    data = {
+                        labels: queryLabels,
+                        datasets: [faceOffData]
+                    };
+                    yAxes = [{ id: qty, ticks: { beginAtZero: true } }];
+                    title = "Face Offs";
+                    graphID = "FaceOffs";
+                    break;
+                case "shotAtGoalEvent":
+                    data = {
+                        labels: queryLabels,
+                        datasets: [shotAtGoalData]
+                    };
+                    yAxes = [{ id: qty, ticks: { beginAtZero: true } }];
+                    title = "Shots At Goal";
+                    graphID = "ShotsAtGoal";
+                    break;
             }
             this.createGraph(data, title, chartType, graphID, yAxes, scheme);
         }
-        console.log(json);
+        // terminates the loading button
+        document.getElementById("queryAnalysisButton").innerHTML = "Analyze";
     };
     Analysis.createGraph = function (graphData, title, chartType, graphID, yAxis, scheme) {
         $('#allCharts').append('<canvas id=' + graphID + '></canvas>');
@@ -541,31 +733,132 @@ var Analysis = /** @class */ (function () {
      * Calls DBconnection to send the Query to the server
      */
     Analysis.analyzeQueries = function () {
-        var slider = document.getElementById("slider");
-        var queryIdArray = $('select#query_select').val();
-        var timeFilter = slider.noUiSlider.get().toString(); //Get the timeFilter
-        DBConnection.analyzeQueries(queryIdArray, timeFilter);
+        if (($('select#query_select').val() == "") || ($('select#query_param_select').val() == "")) {
+            $('#error-querymodal-text').text("You have to select at least one query and one parameter for the Query Analysis.");
+            $("#errorQueryModal").modal();
+            return;
+        }
+        else {
+            // activates loading button
+            document.getElementById("queryAnalysisButton").innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Analysing...';
+            var slider = document.getElementById("slider");
+            var queryIdArray = $('select#query_select').val();
+            var timeFilter = slider.noUiSlider.get().toString(); //Get the timeFilter
+            DBConnection.analyzeQueries(queryIdArray, timeFilter);
+        }
     };
     //to init the player and parameter selection
-    Analysis.loadSelection = function () {
+    Analysis.loadSelectionPlayer = function () {
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
         DBConnection.analysisOn = true; //To send the results to the fillSelection function
-        DBConnection.getFilter("/getPlayers");
+        DBConnection.getFilter("/getPlayers?sportFilter=" + sport);
         $('#param_select').multiSelect({
             selectableHeader: "<div class='custom-header'>All Parameters</div>",
             selectionHeader: "<div class='custom-header'>Selected Parameters</div>"
         });
     };
-    Analysis.fillSelection = function (json) {
+    //to init the team and parameter selection
+    Analysis.loadSelectionTeam = function () {
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        DBConnection.analysisOn = true; //To send the results to the fillSelection function
+        DBConnection.getFilter("/getTeams?sportFilter=" + sport);
+        $('#team_param_select').multiSelect({
+            selectableHeader: "<div class='custom-header'>All Parameters</div>",
+            selectionHeader: "<div class='custom-header'>Selected Parameters</div>"
+        });
+    };
+    //to init the match and parameter selection
+    Analysis.loadSelectionMatch = function () {
+        DBConnection.analysisOn = true; //To send the results to the fillSelection function
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        DBConnection.getFilter("/getMatches?sportFilter=" + sport);
+        $('#match_select').multiSelect({
+            selectableHeader: "<div class='custom-header'>All Matches</div>",
+            selectionHeader: "<div class='custom-header'>Selected Matches</div>"
+        });
+    };
+    Analysis.fillSelectionPlayer = function (json) {
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        var parameterName = "";
+        var parameterID = "";
+        var o = new Option("", "");
+        switch (sport) {
+            case "football":
+                parameterName = "Take Ons";
+                parameterID = "successfulTakeOnEvent";
+                o = new Option(parameterName, parameterID);
+                $('#offense').append(o);
+                parameterName = "Failed Take Ons";
+                parameterID = "failedTakeOnEvent";
+                o = new Option(parameterName, parameterID);
+                $('#offense').append(o);
+                parameterName = "Dribblings";
+                parameterID = "DribblingStatistic";
+                o = new Option(parameterName, parameterID);
+                $('#offense').append(o);
+                parameterName = "Clearances";
+                parameterID = "clearanceEvent";
+                o = new Option(parameterName, parameterID);
+                $('#defense').append(o);
+                parameterName = "Cornerkicks";
+                parameterID = "cornerkickEvent";
+                o = new Option(parameterName, parameterID);
+                $('#setPieces').append(o);
+                parameterName = "Throw ins";
+                parameterID = "throwinEvent";
+                o = new Option(parameterName, parameterID);
+                $('#setPieces').append(o);
+                parameterName = "Freekicks";
+                parameterID = "freekickEvent";
+                o = new Option(parameterName, parameterID);
+                $('#setPieces').append(o);
+                parameterName = "Substitutions (In)";
+                parameterID = "playerOn";
+                o = new Option(parameterName, parameterID);
+                $('#other').append(o);
+                parameterName = "Substitutions (Out)";
+                parameterID = "playerOff";
+                o = new Option(parameterName, parameterID);
+                $('#other').append(o);
+                break;
+            case "icehockey":
+                parameterName = "Entries";
+                parameterID = "entryEvent";
+                o = new Option(parameterName, parameterID);
+                $('#offense').append(o);
+                parameterName = "Stickhandlings";
+                parameterID = "stickhandlingEvent";
+                o = new Option(parameterName, parameterID);
+                $('#offense').append(o);
+                parameterName = "Penalties";
+                parameterID = "penaltyEvent";
+                o = new Option(parameterName, parameterID);
+                $('#defense').append(o);
+                parameterName = "Face Offs";
+                parameterID = "faceOffEvent";
+                o = new Option(parameterName, parameterID);
+                $('#setPieces').append(o);
+                parameterName = "Shifts";
+                parameterID = "shiftEvent";
+                o = new Option(parameterName, parameterID);
+                $('#other').append(o);
+                parameterName = "Dumps";
+                parameterID = "dumpEvent";
+                o = new Option(parameterName, parameterID);
+                $('#other').append(o);
+                break;
+        }
+        $('#param_select').multiSelect('refresh');
         for (var i in json.result) {
             var playerName = json.result[i].name;
             var playerID = json.result[i].pid;
-            var o = new Option(playerName, playerID);
+            var o_1 = new Option(playerName, playerID);
             //Adds the player options to the selection as well as the player ID as the value. "<option value= " + playerID + ">" + playerName + "</option>"
-            $('#player_select').append(o);
+            $('#player_select').append(o_1);
         }
         $('#player_select').multiSelect({
-            selectionHeader: "<div class='custom-header'>Selected Players</div>",
-            selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='All players'>",
+            selectionHeader: "<div class='custom-header'>Selected Players (Max 11) </div>",
+            selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='All Players'>",
             afterInit: function (ms) {
                 var that = this, $selectableSearch = that.$selectableUl.prev(), $selectionSearch = that.$selectionUl.prev(), selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)', selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
                 that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
@@ -594,49 +887,373 @@ var Analysis = /** @class */ (function () {
         });
         $('#player_select').multiSelect('refresh');
     };
+    //fill the box with team names
+    Analysis.fillSelectionTeam = function (json) {
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        var parameterName = "";
+        var parameterID = "";
+        var o = new Option("", "");
+        switch (sport) {
+            case "football":
+                parameterName = "Take Ons";
+                parameterID = "successfulTakeOnEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_offense').append(o);
+                parameterName = "Failed Take Ons";
+                parameterID = "failedTakeOnEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_offense').append(o);
+                parameterName = "Dribblings";
+                parameterID = "DribblingStatistic";
+                o = new Option(parameterName, parameterID);
+                $('#t_offense').append(o);
+                parameterName = "Clearances";
+                parameterID = "clearanceEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_defense').append(o);
+                parameterName = "Offensive";
+                parameterID = "transitionsOffensive";
+                o = new Option(parameterName, parameterID);
+                $('#t_transitions').append(o);
+                parameterName = "Defensive";
+                parameterID = "transitionsDefensive";
+                o = new Option(parameterName, parameterID);
+                $('#t_transitions').append(o);
+                parameterName = "Under Pressing Phases";
+                parameterID = "totalUnderPressurePhases";
+                o = new Option(parameterName, parameterID);
+                $('#t_pressing').append(o);
+                parameterName = "Under Pressing Phases per Game";
+                parameterID = "avgUnderPressurePhasesPerGame";
+                o = new Option(parameterName, parameterID);
+                $('#t_pressing').append(o);
+                parameterName = "Avg Pressing exposed";
+                parameterID = "avgUnderPressureIndex";
+                o = new Option(parameterName, parameterID);
+                $('#t_pressing').append(o);
+                parameterName = "Pressing Phases";
+                parameterID = "totalPressurePhases";
+                o = new Option(parameterName, parameterID);
+                $('#t_pressing').append(o);
+                parameterName = "Pressing Phases per Game";
+                parameterID = "avgPhasesPerGame";
+                o = new Option(parameterName, parameterID);
+                $('#t_pressing').append(o);
+                parameterName = "Avg Pressing exerted";
+                parameterID = "avgPressureIndex";
+                o = new Option(parameterName, parameterID);
+                $('#t_pressing').append(o);
+                parameterName = "Cornerkicks";
+                parameterID = "cornerkickEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_setPieces').append(o);
+                parameterName = "Freekicks";
+                parameterID = "freekickEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_setPieces').append(o);
+                parameterName = "Throw ins";
+                parameterID = "throwinEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_setPieces').append(o);
+                parameterName = "Substitutions per Game";
+                parameterID = "subsPerGame";
+                o = new Option(parameterName, parameterID);
+                $('#t_other').append(o);
+                break;
+            case "icehockey":
+                parameterName = "Entries";
+                parameterID = "entryEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_offense').append(o);
+                parameterName = "Stickhandlings";
+                parameterID = "stickhandlingEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_offense').append(o);
+                parameterName = "Penalties";
+                parameterID = "penaltyEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_defense').append(o);
+                parameterName = "Face Offs";
+                parameterID = "faceOffEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_setPieces').append(o);
+                parameterName = "Shifts";
+                parameterID = "shiftEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_other').append(o);
+                parameterName = "Dumps";
+                parameterID = "dumpEvent";
+                o = new Option(parameterName, parameterID);
+                $('#t_other').append(o);
+                break;
+        }
+        $('#team_param_select').multiSelect('refresh');
+        for (var i in json.result) {
+            var teamName = json.result[i].name;
+            var teamID = json.result[i].tid;
+            var o_2 = new Option(teamName, teamID);
+            //Adds the team options to the selection as well as the team ID as the value. "<option value= " + teamID + ">" + teamName + "</option>"
+            $('#team_select').append(o_2);
+        }
+        $('#team_select').multiSelect({
+            selectionHeader: "<div class='custom-header'>Selected Teams</div>",
+            selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='All Teams'>",
+            afterInit: function (ms) {
+                var that = this, $selectableSearch = that.$selectableUl.prev(), $selectionSearch = that.$selectionUl.prev(), selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)', selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
+                that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
+                    .on('keydown', function (e) {
+                    if (e.which === 40) {
+                        that.$selectableUl.focus();
+                        return false;
+                    }
+                });
+                that.qs2 = $selectionSearch.quicksearch(selectionSearchString)
+                    .on('keydown', function (e) {
+                    if (e.which == 40) {
+                        that.$selectionUl.focus();
+                        return false;
+                    }
+                });
+            },
+            afterSelect: function () {
+                this.qs1.cache();
+                this.qs2.cache();
+            },
+            afterDeselect: function () {
+                this.qs1.cache();
+                this.qs2.cache();
+            }
+        });
+        $('#team_select').multiSelect('refresh');
+    };
+    //fill the box with team names
+    Analysis.fillSelectionMatch = function (json) {
+        for (var i in json) {
+            var matchInfo = json[i][0];
+            var matchId = matchInfo.matchId;
+            var homeTeam = matchInfo.homeTeamName;
+            var awayTeam = matchInfo.awayTeamName;
+            var matchName = homeTeam + " vs. " + awayTeam;
+            var o = new Option(matchName, matchId);
+            //Adds the team options to the selection as well as the team ID as the value. "<option value= " + teamID + ">" + teamName + "</option>"
+            $('#match_select').append(o);
+        }
+        $('#match_select').multiSelect({
+            selectionHeader: "<div class='custom-header'>Selected Matches</div>",
+            selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='All Teams'>",
+            afterInit: function (ms) {
+                var that = this, $selectableSearch = that.$selectableUl.prev(), $selectionSearch = that.$selectionUl.prev(), selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)', selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
+                that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
+                    .on('keydown', function (e) {
+                    if (e.which === 40) {
+                        that.$selectableUl.focus();
+                        return false;
+                    }
+                });
+                that.qs2 = $selectionSearch.quicksearch(selectionSearchString)
+                    .on('keydown', function (e) {
+                    if (e.which == 40) {
+                        that.$selectionUl.focus();
+                        return false;
+                    }
+                });
+            },
+            afterSelect: function () {
+                this.qs1.cache();
+                this.qs2.cache();
+            },
+            afterDeselect: function () {
+                this.qs1.cache();
+                this.qs2.cache();
+            }
+        });
+        $('#match_select').multiSelect('refresh');
+    };
+    /**
+     * Select and Deselect ALL parameters in the Player Analysis
+     */
+    Analysis.selectAllPlayerParam = function () {
+        if (document.getElementById('selectPlayerParamBtn').innerHTML == "Select All") {
+            $('#param_select').multiSelect('select_all');
+            document.getElementById('selectPlayerParamBtn').innerHTML = "Deselect All";
+        }
+        else if (document.getElementById('selectPlayerParamBtn').innerHTML == "Deselect All") {
+            $('#param_select').multiSelect('deselect_all');
+            document.getElementById('selectPlayerParamBtn').innerHTML = "Select All";
+        }
+    };
+    /**
+     * Select and Deselect ALL parameters in the Team Analysis
+     */
+    Analysis.selectAllTeamParam = function () {
+        if (document.getElementById('selectTeamParamBtn').innerHTML == "Select All") {
+            $('#team_param_select').multiSelect('select_all');
+            document.getElementById('selectTeamParamBtn').innerHTML = "Deselect All";
+        }
+        else if (document.getElementById('selectTeamParamBtn').innerHTML == "Deselect All") {
+            $('#team_param_select').multiSelect('deselect_all');
+            document.getElementById('selectTeamParamBtn').innerHTML = "Select All";
+        }
+    };
+    /**
+     * Select and Deselect ALL parameters in the Query Analysis
+     */
+    Analysis.selectAllQueryParam = function () {
+        if (document.getElementById('selectQueryParamBtn').innerHTML == "Select All") {
+            $('#query_param_select').multiSelect('select_all');
+            document.getElementById('selectQueryParamBtn').innerHTML = "Deselect All";
+        }
+        else if (document.getElementById('selectQueryParamBtn').innerHTML == "Deselect All") {
+            $('#query_param_select').multiSelect('deselect_all');
+            document.getElementById('selectQueryParamBtn').innerHTML = "Select All";
+        }
+    };
     Analysis.loadQuerySelection = function () {
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        var parameterName = "";
+        var parameterID = "";
+        var o = new Option("", "");
+        switch (sport) {
+            case "football":
+                parameterName = "Clearances";
+                parameterID = "clearanceEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                parameterName = "Cornerkicks";
+                parameterID = "cornerkickEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                parameterName = "Throw ins";
+                parameterID = "throwinEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                break;
+            case "icehockey":
+                parameterName = "Dumps";
+                parameterID = "dumpEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                parameterName = "Entries";
+                parameterID = "entryEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                parameterName = "Shifts";
+                parameterID = "shiftEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                parameterName = "Face Offs";
+                parameterID = "faceOffEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+                parameterName = "Shots At Goal";
+                parameterID = "shotAtGoalEvent";
+                o = new Option(parameterName, parameterID);
+                $('#query_param_select').append(o);
+        }
         var sliderDiv = document.getElementById("sliderDiv");
         sliderDiv.style.display = "none";
         DBConnection.analysisOn = true;
-        DBConnection.getFilter("/getQueries");
+        DBConnection.getFilter("/getQueries?sportFilter=" + sport);
         $('#query_param_select').multiSelect({
             selectableHeader: "<div class='custom-header'>All Parameters</div>",
             selectionHeader: "<div class='custom-header'>Selected Parameters</div>"
         });
         //TODO: Load the timeline to filter here.
         var slider = document.getElementById('slider');
-        noUiSlider.create(slider, {
-            start: [0, 90],
-            tooltips: [true, true],
-            connect: true,
-            step: 0.5,
-            range: {
-                'min': 0,
-                'max': 100
-            }
-        });
+        var thirdHalf = document.getElementById('3rdHalf');
+        var secondHalf = document.getElementById('2ndHalf');
+        var firstHalf = document.getElementById('1stHalf');
+        thirdHalf.innerText = "3rd Period";
+        switch (sport) {
+            case "football":
+                noUiSlider.create(slider, {
+                    start: [0, 90],
+                    tooltips: [true, true],
+                    connect: true,
+                    step: 0.5,
+                    range: {
+                        'min': 0,
+                        'max': 100
+                    }
+                });
+                thirdHalf.style.display = "none";
+                break;
+            case "icehockey":
+                noUiSlider.create(slider, {
+                    start: [0, 60],
+                    tooltips: [true, true],
+                    connect: true,
+                    step: 0.5,
+                    range: {
+                        'min': 0,
+                        'max': 60
+                    }
+                });
+                secondHalf.innerText = "2nd Period";
+                firstHalf.innerText = "1st Period";
+                break;
+            default:
+                noUiSlider.create(slider, {
+                    start: [0, 90],
+                    tooltips: [true, true],
+                    connect: true,
+                    step: 0.5,
+                    range: {
+                        'min': 0,
+                        'max': 100
+                    }
+                });
+                break;
+        }
         slider.noUiSlider.on('set', function () {
             Analysis.analyzeQueries();
         });
     };
     Analysis.setFirstHalf = function () {
         var slider = document.getElementById('slider');
-        slider.noUiSlider.set([0, 45]);
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        switch (sport) {
+            case "football":
+                slider.noUiSlider.set([0, 45]);
+                break;
+            case "icehockey":
+                slider.noUiSlider.set([0, 20]);
+                break;
+        }
     };
     Analysis.setSecondHalf = function () {
         var slider = document.getElementById('slider');
-        slider.noUiSlider.set([45, 90]);
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        switch (sport) {
+            case "football":
+                slider.noUiSlider.set([45, 90]);
+                break;
+            case "icehockey":
+                slider.noUiSlider.set([20, 40]);
+                break;
+        }
+    };
+    Analysis.setThirdHalf = function () {
+        var slider = document.getElementById('slider');
+        var sport = window.location.search.substring(window.location.search.lastIndexOf("=") + 1);
+        switch (sport) {
+            case "icehockey":
+                slider.noUiSlider.set([40, 60]);
+        }
     };
     Analysis.fillQuerySelection = function (json) {
         //create options for all the queries with the QueryID as value and QueryName as text
         for (var i in json.result) {
             var queryName = json.result[i].name;
+            var querySport = json.result[i].sport;
             var query_ID = json.result[i].qid;
-            var o = new Option(queryName, query_ID);
-            $('#query_select').append(o);
+            if (window.location.search.substring(window.location.search.lastIndexOf("=") + 1) === querySport) {
+                var o = new Option(queryName, query_ID);
+                $('#query_select').append(o);
+            }
         }
         $('#query_select').multiSelect({
-            selectionHeader: "<div class='custom-header'>Selected Queries(Max 5)</div>",
+            selectionHeader: "<div class='custom-header'>Selected Queries (Max 5)</div>",
             selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='All Queries'>",
             afterInit: function (ms) {
                 var that = this, $selectableSearch = that.$selectableUl.prev(), $selectionSearch = that.$selectionUl.prev(), selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)', selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
@@ -666,6 +1283,174 @@ var Analysis = /** @class */ (function () {
         });
         $('#query_select').multiSelect('refresh');
     };
+    /**
+     * Checks if a match is selected and calls DBConnection to calculate the pressing phases
+     */
+    Analysis.calculatePressing = function () {
+        var btnContent = document.getElementById("pressingAnalysisBtn").innerHTML;
+        if (btnContent == "Pressing Phases") {
+            if (FilterArea.getMatchFilters() == "") {
+                $('#error-modal-text').text("You have to select a match for the pressing analysis.");
+                $("#errorMPModal").modal();
+                return;
+            }
+            else {
+                // if phases from ResultList should be removed and to clear drawingArea
+                ResultList.removeResultsFromResultList(Timeline.getItemListLength());
+                DrawingArea.clearAndResetDefault();
+                document.getElementById("pressingAnalysisBtn").innerHTML = 'Deactivate Pressing Phases';
+                var user = document.getElementById('userMenu').textContent;
+                var userName = user.trim();
+                DBConnection.analyzePressing(userName);
+            }
+        }
+        else {
+            document.getElementById("pressingAnalysisBtn").innerHTML = 'Pressing Phases';
+            Timeline.resizeTimeline();
+            DrawingArea.clearAndResetDefault();
+        }
+    };
+    /**
+     * Checks if a match is selected and calls DBConnection to calculate the pressing index for the match
+     */
+    Analysis.calculatePressingFor2d = function () {
+        //first check if speed Analysis graph2d is currently visible and delete if so
+        var speedBtn = document.getElementById("playerSpeedBtn").innerHTML;
+        if (speedBtn != "Speed Analysis") {
+            document.getElementById("playerSpeedBtn").innerHTML = 'Speed Analysis';
+            Graph2d.clearItemList();
+            Timeline.resetTimelineAfter2d();
+        }
+        //now the pressing Index calculation starts
+        var btnContent = document.getElementById("pressingAnalysis2dBtn").innerHTML;
+        if (btnContent == "Pressing Index") {
+            if (FilterArea.getMatchFilters() == "") {
+                $('#error-modal-text').text("You have to select a match for the pressing analysis.");
+                $("#errorMPModal").modal();
+                return;
+            }
+            else {
+                document.getElementById("pressingAnalysis2dBtn").innerHTML = 'Deactivate Pressing Index';
+                document.getElementById('timeline').setAttribute("style", "height: 12.5%");
+                DBConnection.analyzePressing2d();
+            }
+        }
+        else {
+            document.getElementById("pressingAnalysis2dBtn").innerHTML = 'Pressing Index';
+            Graph2d.clearItemList();
+            Timeline.resetTimelineAfter2d();
+        }
+    };
+    /**
+     * Function is called if clear button is clicked and resets timeline and graph2d to default settings
+     */
+    Analysis.reset2dToDefault = function () {
+        document.getElementById("pressingAnalysis2dBtn").innerHTML = 'Pressing Index';
+        document.getElementById("playerSpeedBtn").innerHTML = 'Speed Analysis';
+        document.getElementById('timeline').setAttribute("style", "height: 25%");
+        Graph2d.clearItemList();
+        Timeline.resizeTimeline();
+    };
+    /**
+     * Checks if at least one player is selected and calls DBConnection to calculate the players' speed
+     */
+    Analysis.calculatePlayerSpeed = function () {
+        //first check if pressingIndex graph2d is currently visible and delete if so
+        var pressingBtn = document.getElementById("pressingAnalysis2dBtn").innerHTML;
+        if (pressingBtn != "Pressing Index") {
+            document.getElementById("pressingAnalysis2dBtn").innerHTML = 'Pressing Index';
+            Graph2d.clearItemList();
+            Timeline.resetTimelineAfter2d();
+        }
+        //now the Speed Analysis starts
+        var btnContent = document.getElementById("playerSpeedBtn").innerHTML;
+        if (btnContent == "Speed Analysis") {
+            if (FilterArea.getPlayerFilters() != "" && FilterArea.getMatchFilters() != "") {
+                document.getElementById("playerSpeedBtn").innerHTML = 'Deactivate Speed Analysis';
+                document.getElementById('timeline').setAttribute("style", "height: 12.5%");
+                Graph2d.fillPlayerList();
+                DBConnection.analyzePlayerSpeed();
+            }
+            else {
+                $('#error-modal-text').text("You have to select a match and at least one player for the speed analysis.");
+                $("#errorMPModal").modal();
+                return;
+            }
+        }
+        else {
+            document.getElementById("playerSpeedBtn").innerHTML = 'Speed Analysis';
+            Graph2d.clearItemList();
+            Timeline.resetTimelineAfter2d();
+        }
+    };
+    Analysis.calculatePlayerPassNetwork = function () {
+        var btn = document.getElementById("passNetworkBtn").innerHTML;
+        if (btn != "Deactivate Pass Network") {
+            if (FilterArea.getTeamFilters() != "" && FilterArea.getMatchFilters() != "") {
+                document.getElementById("passNetworkBtn").innerHTML = 'Deactivate Pass Network';
+                DBConnection.analyzePlayerPassNetwork();
+            }
+            else {
+                $('#error-modal-text').text("You have to select a match and a team for the network analysis.");
+                $("#errorMPModal").modal();
+                return;
+            }
+        }
+        else {
+            document.getElementById("passNetworkBtn").innerHTML = 'Pass Network';
+            Network.clearNodesAndEdges();
+        }
+    };
+    /**
+     * Called if a customizaton of pressing values has taken place and calls the server to update values in the DB
+     */
+    Analysis.setNewPressingValues = function () {
+        var indexThreshold = $('#pressingIndexThreshold').val();
+        var durationThreshold = $('#pressingDurationThreshold').val() * 1000; //milliseconds
+        var user = document.getElementById('userMenu').textContent;
+        DBConnection.customizePressing(user, indexThreshold, durationThreshold);
+        // needed to customize pressing if no user is selected --> values only stored temporary for the session
+        CONFIG.PRESSING_INDEX_THRESHOLD = $('#pressingIndexThreshold').val();
+        CONFIG.PRESSING_DURATION_THRESHOLD = $('#pressingDurationThreshold').val() * 1000;
+        // Need to remove phases from ResultList and to clear drawingArea
+        ResultList.removeResultsFromResultList(Timeline.getItemListLength());
+        DrawingArea.clearAndResetDefault();
+    };
+    /**
+     * Called if pressing values are set back to default in the customization modal
+     */
+    Analysis.setDefaultPressingValues = function () {
+        $('#pressingIndexThreshold').val(2);
+        $('#pressingDurationThreshold').val(2);
+    };
+    Analysis.calculateOffTransition = function () {
+        if (FilterArea.getMatchFilters() == "" || FilterArea.getTeamFilters() == "") {
+            $('#error-modal-text').text("You have to select a match and a team for the transition analysis.");
+            $("#errorMPModal").modal();
+            return;
+        }
+        else {
+            // if phases from ResultList should be removed and to clear drawingArea
+            ResultList.removeResultsFromResultList(Timeline.getItemListLength());
+            DrawingArea.clearAndResetDefault();
+            var user = document.getElementById('userMenu').textContent;
+            DBConnection.analyzeOffTransition(user);
+        }
+    };
+    Analysis.calculateDefTransition = function () {
+        if (FilterArea.getMatchFilters() == "" || FilterArea.getTeamFilters() == "") {
+            $('#error-modal-text').text("You have to select a match and a team for the transition analysis.");
+            $("#errorMPModal").modal();
+            return;
+        }
+        else {
+            // if phases from ResultList should be removed and to clear drawingArea
+            ResultList.removeResultsFromResultList(Timeline.getItemListLength());
+            DrawingArea.clearAndResetDefault();
+            var user = document.getElementById('userMenu').textContent;
+            DBConnection.analyzeDefTransition(user);
+        }
+    };
     // needed for the visualization in the UI
     Analysis.parameterDict = {
         "gamesPlayed": "Games Played",
@@ -694,15 +1479,41 @@ var Analysis = /** @class */ (function () {
         "DribblingStatistic": "Dribblings",
         "interceptionEvent": "Interceptions",
         "clearanceEvent": "Clearances",
+        "totalUnderPressurePhases": "Under Pressing Phases",
+        "avgUnderPressurePhasesPerGame": "Under Pressing Phases per Game",
+        "avgUnderPressureIndex": "Average Pressing exposed [Pressing-Index]",
+        "totalPressurePhases": "Pressing Phases",
+        "avgPhasesPerGame": "Pressing Phases per Game",
+        "avgPressureIndex": "Average Pressing exerted [Pressing-Index]",
+        "timeSpeedZone1": "Spent time [in s] standing [< 1 km/h]",
+        "timeSpeedZone2": "Spent time [in s] walking [1.1-11 km/h]",
+        "timeSpeedZone3": "Spent time [in s] jogging [11.1-14 km/h]",
+        "timeSpeedZone4": "Spent time [in s] running [14.1-17 km/h]",
+        "timeSpeedZone5": "Spent time [in s] sprinting [17.1-24 km/h]",
+        "timeSpeedZone6": "Spent time [in s] at maximum speed [> 24 km/h]",
         "totalTouches": "Touches",
         "cornerkickEvent": "Cornerkicks",
-        "throwinEvent": "Throwins"
+        "throwinEvent": "Throwins",
+        "freekickEvent": "Freekicks",
+        "playerFoulsEvent": "Fouls committed",
+        "playerGetFouledEvent": "Fouls against",
+        "teamFoulsEvent": "Fouls committed",
+        "teamGetFouledEvent": "Fouls against",
+        "transitionsOffensive": "Transitions DEF-OFF per Game",
+        "transitionsDefensive": "Transitions OFF-DEF per Game",
+        "successfulTakeOnEvent": "Successful Take Ons",
+        "failedTakeOnEvent": "Failed Take Ons",
+        "playerOn": "Substitutions (In)",
+        "playerOff": "Substitutions (Out)",
+        "subsPerGame": "Substitutions per Game",
+        "dumpEvent": "Dumps",
+        "entryEvent": "Entries",
+        "shiftEvent": "Shifts",
+        "faceOffEvent": "Face Offs",
+        "shotAtGoalEvent": "Shots at Goal",
+        "penaltyEvent": "Penalties",
+        "stickhandlingEvent": "Stickhandlings"
     };
-    Analysis.cards2 = {
-        "Robert": [0, 45, 12, 8, 3],
-        "Tim": [1, 57, 5, 3, 0]
-    };
-    Analysis.param2 = ["Goals", "Successful Passes", "Misplaced Passes", "Interceptions", "Tackles"];
     Analysis.colors = [['#e5524a', '#ee8b86'], ['#187fce', '#74b2e2'], ['#008d68', '#66bba4'], ['#ffa800', '#ffcb66'], ['#7b457b', '#b08fb0'], ['#e5524a', '#ee8b86'], ['#187fce', '#74b2e2'], ['#008d68', '#66bba4'], ['#ffa800', '#ffcb66'], ['#7b457b', '#b08fb0'], ['#e5524a', '#ee8b86']];
     return Analysis;
 }());

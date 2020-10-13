@@ -277,7 +277,7 @@ class EventChain {
         OffBallActivities.registerActiveEventChain(this);
 
         // set correct colors for all events
-        EventChain.updateChainColors();
+        //EventChain.updateChainColors();
     }
 
     /**

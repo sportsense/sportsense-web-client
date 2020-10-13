@@ -131,20 +131,30 @@ class OffBallActivities {
      */
     private static updatePlayerSelection(): void {
         let selection: string[] = [];
+
+        //console.log(matchFilter);
         for (let playerOption of this.playerOptions) { // going through the list of players
             let i: number = playerOption.indexOf(" [ID:");
             if (i >= 0) {
                 let teamChar: string = playerOption.substr(i+5, 1); // extracting the team char from the id
-                if (OffBallActivities.teamAIsActive && (teamChar == "A" || teamChar == "C")) { // this player belongs to theam A
+
+                if (OffBallActivities.teamAIsActive && (teamChar == CONFIG.TEAM_A_CHAR)) { // this player belongs to team A
                     selection.push(playerOption);
                 }
-                if (teamChar == "B" || teamChar == "D") { // either this player belongs to team B or it is the ball
+                else if (teamChar == CONFIG.TEAM_B_CHAR) {// either this player belongs to team B or it is the ball
                     if (playerOption.substr(i+5, 4) == "BALL") { // we only take the ball into selection if ball button is active
                         if (OffBallActivities.ballIsActive) {
                             selection.push(playerOption);
                         }
                     } else { // it's a player and not the ball
                         if (OffBallActivities.teamBIsActive) {
+                            selection.push(playerOption);
+                        }
+                    }
+                }
+                else if (teamChar == "B"){ // if we have team label C, D, etc. we have to do the extra check for the Ball here
+                    if (playerOption.substr(i+5, 4) == "BALL") { // we only take the ball into selection if ball button is active
+                        if (OffBallActivities.ballIsActive) {
                             selection.push(playerOption);
                         }
                     }
@@ -222,9 +232,11 @@ class OffBallActivities {
      * This method mirrors the method FilterArea.fill() in structure and methodology.
      */
     public static fill(json: any, method: string): void {
-        if (method == "/getPlayers") {
+        let sportFilter: string = window.location.search.substring(window.location.search.lastIndexOf("=")+1);
+        //if (method == "/getPlayers?sportFilter=" + sportFilter) {
+        if (method == "/getPlayers?sportFilter=" + sportFilter) {
             this.playerOptions = [];
-
+            OffBallActivities.playerFilter.empty();
             let balloptiontext: string = "Ball movement [ID:BALL]";
             this.playerOptions.push(balloptiontext);
             OffBallActivities.playerFilter.append(new Option(balloptiontext));
@@ -234,6 +246,7 @@ class OffBallActivities {
                 this.playerOptions.push(optiontext);
                 OffBallActivities.playerFilter.append(new Option(optiontext));
             }
+            OffBallActivities.playerFilter.selectpicker('refresh');
         }
     }
 
@@ -243,12 +256,12 @@ class OffBallActivities {
     public static getFilterQuery(): string {
         let sportFilter: string = window.location.search.substr(1).split('=')[1];
 
-        let res: string = '&eventFilters={' + '' + "}";
-        res += '&teamFilters={' + '' + "}";
-        res += '&playerFilters={' + OffBallActivities.getPlayerFilters() + "}";
-        res += '&periodFilters={' + '' + "}";
+        let res: string = '&eventFilters={' + '' + '}';
+        res += '&teamFilters={' + '' + '}';
+        res += '&playerFilters={' + OffBallActivities.getPlayerFilters() + '}';
+        res += '&periodFilters={' + '' + '}';
         res += '&timeFilter={' + OffBallActivities.getTimeFilter() + '}';
-        res += '&sportFilter={' + "'sport':" + sportFilter + "}";
+        res += '&sportFilter={' + "'sport':" + sportFilter + '}';
         res += '&matchIDFilter=' + OffBallActivities.getCurrentEventMatchID();
         res += '&minPathLength={"true"}';
         return res;
@@ -260,8 +273,8 @@ class OffBallActivities {
      */
     private static getPlayerFilters(): string {
         let title = document.getElementById("offball_playerfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
+        let res = "";
         if (title != "Player filter") {
-            let res = "";
             let list = title.split(", ");
             for (let i in list) {
                 let id = list[i].match(/\[(.*?)\]/)[1].split(":")[1];
@@ -269,7 +282,10 @@ class OffBallActivities {
             }
             return res.substring(0, res.length - 1);
         } else {
-            return "";
+            // by default the ball is selected and its trajectory is visualized on the canvas
+            return "filter0: BALL";
+            // alternative to have no trajectory visualized on the canvas: works, but throws an error
+            // return res;
         }
     }
 
@@ -363,5 +379,29 @@ class OffBallActivities {
      */
     private static getCurrentEventMatchID():string {
         return this.currentEvent.matchId;
+    }
+
+    /**
+     * Updates the color of the labels according to the team Colors
+     */
+    public static updateTeamLabelColors(): void{
+        $('#offball_team_a_label').css('color', CONFIG.COLOR_TEAM_A_STANDARD);
+        $('#offball_team_b_label').css('color', CONFIG.COLOR_TEAM_B_STANDARD);
+    }
+
+    /**
+     * Updates the names of the labels according to the team Names
+     */
+    public static updateTeamLabelNames(): void{
+        document.getElementById('offball_team_a_label').innerHTML = CONFIG.TEAM_A_Name;
+        document.getElementById('offball_team_b_label').innerHTML = CONFIG.TEAM_B_Name;
+    }
+
+    /**
+     * Resets the names of the labels
+     */
+    public static resetTeamLabelNames(): void{
+        document.getElementById('offball_team_a_label').innerHTML ="Team A";
+        document.getElementById('offball_team_b_label').innerHTML ="Team B";
     }
 }

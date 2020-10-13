@@ -21,14 +21,12 @@ var SaveQuery = /** @class */ (function () {
     }
     SaveQuery.deleteQuery = function (queryID) {
         //Send method "deleteQuery with the query ID to the DB, then send back to remove the list element with that ID
-        console.log("Delete this " + queryID);
         DBConnection.editSavedQueries("delQuery", queryID);
         var element = document.getElementById(queryID); //To remove the deleted Query from the list
         element.parentNode.removeChild(element);
     };
     SaveQuery.rerunQuery = function (queryID) {
         //Send to DB the ID of the saved Query, then use the shapeQuery method in the Server and send back the events, also set the Filters to the state.
-        console.log("Rerun this " + queryID);
         DBConnection.editSavedQueries("rerunQuery", queryID);
     };
     /**
@@ -56,7 +54,6 @@ var SaveQuery = /** @class */ (function () {
         }
         else if (DBConnection.active_eventmarkers.length != 0) {
             DBConnection.saveEcQuery(obj.value);
-            console.log(DBConnection.active_eventmarkers);
         }
         else {
             DBConnection.saveNormalQuery(obj.value);
@@ -70,8 +67,10 @@ var SaveQuery = /** @class */ (function () {
      */
     SaveQuery.fillQueries = function (json) {
         for (var i in json.result) {
+            var querySport = json.result[i].sport;
             var queryName = json.result[i].name;
             var query_ID = json.result[i].qid;
+            //if(window.location.search.substr(1).split('=')[1] === querySport) {
             var li = document.createElement("li");
             li.className = "li-query";
             li.id = query_ID;
@@ -79,6 +78,7 @@ var SaveQuery = /** @class */ (function () {
             li.innerHTML = queryName + buttonHTMLString;
             //Adds the player options to the selection as well as the player ID as the value. "<option value= " + playerID + ">" + playerName + "</option>"
             $('#savedQueries').append(li);
+            //}
         }
     };
     return SaveQuery;

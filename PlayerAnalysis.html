@@ -22,30 +22,40 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link href="src/css/analysis.css" rel="stylesheet" type="text/css"/>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/multi-select/0.9.12/css/multi-select.css" rel="stylesheet" type="text/css">
 
     <title>Player Analysis</title>
 </head>
-<body onload="Analysis.loadSelection()">
-<div class="container">
+<body onload="Analysis.loadSelectionPlayer(), Analysis.loadSelectionMatch()">
+<div class="row-name">
     <h1>Player Analysis</h1>
+</div>
+<div class="container-fluid">
     <div class="row">
+        <div class="col">
+        </div>
         <div class="col">
             <select multiple="multiple" id="player_select" name="my-select[]">
             </select>
         </div>
         <div class="col">
+            <select multiple="multiple" id="match_select" name="my-select[]">
+             </select>
+        </div>
+        <div class="col">
             <select multiple="multiple" id="param_select" name="my-select[]">
-                <optgroup label="General">
+                <optgroup id=general" label="General">
                     <option value="gamesPlayed">Games Played</option>
                     <option value="gamesWon">Games Won</option>
                     <option value="gamesLost">Games Lost</option>
                     <option value="gamesDrawn">Games Drawn</option>
                     <option value="winPercentage">Win Percentage</option>
                 </optgroup>
-                <optgroup label="Passing">
+                <optgroup id="passing" label="Passing">
                     <option value="successfulPassEvent">Successful Passes</option>
                     <option value="misplacedPassEvent">Misplaced Passes</option>
                     <option value="passAccuracy">Passing Accuracy</option>
@@ -59,25 +69,44 @@
                     <option value="forwardPasses">Passes Forward</option>
                     <option value="backwardPasses">Passes Backward</option>
                 </optgroup>
-                <optgroup label="Attacking">
+                <optgroup id="offense" label="Offense">
                     <option value="goalEvent">Goals</option>
-                    <option value="totalShots">Total Shots</option>
                     <option value="shotOnTargetEvent">Shots on Target</option>
                     <option value="shotOffTargetEvent">Shots off Target</option>
+                    <option value="totalShots">Total Shots</option>
                     <option value="avgShotLength">Avg Shot Length</option>
                     <option value="avgShotVelocity">Avg Shot Velocity</option>
-                    <option value="DribblingStatistic">Dribblings</option>
+                    <!--<option value="successfulTakeOnEvent">Take Ons</option>
+                    <option value="failedTakeOnEvent">Failed Take Ons</option>
+                    <option value="DribblingStatistic">Dribblings</option>-->
                 </optgroup>
-                <optgroup label="Defending">
+                <optgroup id="defense" label="Defense">
                     <option value="interceptionEvent">Interceptions</option>
-                    <option value="clearanceEvent">Clearances</option>
+                    <!--<option value="clearanceEvent">Clearances</option>-->
+                    <option value="playerFoulsEvent">Fouls committed</option>
+                    <option value="playerGetFouledEvent">Fouls against</option>
                 </optgroup>
-                <optgroup label="Other">
-                    <option value="totalTouches">Total Touches</option>
+                <optgroup id="physical" label="Physical">
+                    <option value="timeSpeedZone1">Time in Speedzone 1</option>
+                    <option value="timeSpeedZone2">Time in Speedzone 2</option>
+                    <option value="timeSpeedZone3">Time in Speedzone 3</option>
+                    <option value="timeSpeedZone4">Time in Speedzone 4</option>
+                    <option value="timeSpeedZone5">Time in Speedzone 5</option>
+                    <option value="timeSpeedZone6">Time in Speedzone 6</option>
+                </optgroup>
+                <optgroup id="setPieces" label="Set Pieces">
+                    <!--<option value="freekickEvent">Freekicks</option>
                     <option value="cornerkickEvent">Cornerkicks</option>
-                    <option value="throwinEvent">Throw ins</option>
+                    <option value="throwinEvent">Throw ins</option>-->
+                </optgroup>
+                <optgroup id="other" label="Other">
+                    <option value="totalTouches">Total Touches</option>
+                    <!--<option value="playerOn">Substitutions (In)</option>
+                    <option value="playerOff">Substitutions (Out)</option>-->
                 </optgroup>
             </select>
+        </div>
+        <div class="col">
         </div>
     </div>
 
@@ -85,12 +114,29 @@
         <div class="col-sm">
         </div>
         <div class="col-sm">
-            <button id="analysisButton" class="btn btn-primary btn-block" onclick="Analysis.analyze() ">Analyze</button>
+        </div>
+        <div class="col-sm">
+            <button id="selectPlayerParamBtn" class="btn btn-secondary" content="Select All" onclick="Analysis.selectAllPlayerParam()" >Select All</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm">
+        </div>
+        <div class="col-sm">
+        </div>
+        <div class="col-sm">
+            <button id="playerAnalysisButton" class="btn btn-primary btn-block" onclick="Analysis.analyzeP()">Analyze</button>
+        </div>
+        <div class="col-sm">
         </div>
         <div class="col-sm">
         </div>
     </div>
 
+
+</div>
+<div class="container">
     <div id="playerAnalysis">
         <div class="players-g">
         </div>
@@ -98,6 +144,27 @@
         </div>
     </div>
 </div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorPlayerModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle" style="color:red">Error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="error-playermodal-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- import external libraries-->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>

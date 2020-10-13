@@ -40,7 +40,7 @@ class Result {
     private playerIds: string[];
 
     // can be used to trigger a hover/setActive function
-    // is either of type EventChain, or MultiPathLine, or MultiPathLineWithArrow
+    // is either of type EventChain, or MultiPathLine, or MultiPathLineWithArrow, or Phases
     private element: any;
 
     private deactivated: boolean;
@@ -62,7 +62,7 @@ class Result {
         this.playerIds = players;
 
         this.element = e;
-        
+
         this.element.setElemID(this.listID);
         
         this.deactivated = false;
@@ -93,15 +93,13 @@ class Result {
     }
 
     public setActive(): void {
-        console.log("setActive");
         if(!this.deactivated){
-            if(this.element instanceof EventChain){
+            if (this.element instanceof EventChain) {
                 this.element.changeActiveChain();
-            }else{
+            }
+            else if(this.element instanceof  MultiPathLine || this.element instanceof  MultiPathLineWithArrow) {
                 this.element.changeActiveLine();
             }
-            //console.log("matchID:" + this.element.matchId);
-            //console.log("videotime:" + this.element.video_time);
             videoarea.setVideoTime(this.element.video_time, this.element.matchId);
         }
     }

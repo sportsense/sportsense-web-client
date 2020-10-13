@@ -39,6 +39,11 @@ class ResultList {
         Timeline.resetTimeline();
     }
 
+    public static removeResultsFromResultList(start:number): void{
+        ResultList.resultList.slice(start);
+        Timeline.resetTimeline();
+    }
+
     public static countElements(): number{
         return ResultList.resultList.length;
     }

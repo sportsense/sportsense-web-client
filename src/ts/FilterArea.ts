@@ -51,20 +51,15 @@ class FilterArea {
 
         FilterArea.$expanddropdown = $('.expanddropdown');
 
-        // TODO: adjust the video paths
-        FilterArea.matchIDVideoPaths = {
-            "Match ID: 742569" : "SUI-CRO.mp4",
-            "Match ID: 132772" : "NAC-AJAX.mp4",
-            "Match ID: 32665" : "FCSG-Servette.mp4"
-        };
+        FilterArea.matchIDVideoPaths = {};
 
         FilterArea.multipleAttribute = $('.playerfilter').attr('multiple');
-
-        DBConnection.getFilter("/getEventTypes");
-        DBConnection.getFilter("/getTeams");
-        DBConnection.getFilter("/getPlayers");
-        DBConnection.getFilter("/getMatches");
-        DBConnection.getFilter("/getQueries");
+        let sport: string = window.location.search.substr(1).split('=')[1];
+        DBConnection.getFilter("/getEventTypes?sportFilter=" + sport);
+        DBConnection.getFilter("/getTeams?sportFilter=" + sport);
+        DBConnection.getFilter("/getPlayers?sportFilter=" + sport);
+        DBConnection.getFilter("/getMatches?sportFilter=" + sport);
+        DBConnection.getFilter("/getQueries?sportFilter=" + sport);
 
         // filters have to log if the user clicked to see the menu in order to determine if the filter has been changed manually by the user
         // if not the filter has been changed by clicking a drawing object on the drawing area and therefore the nextQuery function does not have to be called.
@@ -154,7 +149,10 @@ class FilterArea {
      * @param method
      */
     public static fill(json: any, method: string): void {
-        if (method == "/getEventTypes") {
+        let sport: string = window.location.search.substr(1).split('=')[1];
+        if (method == "/getEventTypes?sportFilter=" + sport) {
+            FilterArea.eventFilter.empty();
+            FilterArea.expandFilter.empty();
             for (let text of json.eventType) {
                 let optiontext: string = text;
                 FilterArea.eventFilter.append(new Option(optiontext));
@@ -162,31 +160,47 @@ class FilterArea {
             }
             FilterArea.eventFilter.selectpicker('refresh');
             FilterArea.expandFilter.selectpicker('refresh');
-        } else if (method == "/getTeams") {
+        } else if (method == "/getTeams?sportFilter=" + sport) {
+            FilterArea.teamFilter.empty();
             for (let i in json.result) {
                 let optiontext: string = json.result[i].name + " [ID:" + json.result[i].tid + "]";
                 FilterArea.teamFilter.append(new Option(optiontext));
             }
             FilterArea.teamFilter.selectpicker('refresh');
-        } else if (method == "/getPlayers") {
-            //SaveQuery.fillQueries(json); //just to test the saved Filter funciton
+        } else if (method == "/getPlayers?sportFilter=" + sport) {
+            FilterArea.playerFilter.empty();
             for (let i in json.result) {
                 let optiontext: string = json.result[i].name + " [ID:" + json.result[i].pid + "]";
                 FilterArea.playerFilter.append(new Option(optiontext));
             }
             FilterArea.playerFilter.selectpicker('refresh');
-        } else if (method == "/getMatches") {
-            for (let match_string in json) {
-                let match = json[match_string][0];
-                if (window.location.search.substr(1).split('=')[1] === match.sport[0]) {
-                    let optiontext: string = "Match ID: " + match.matchId[0];
-                    FilterArea.matchFilter.append(new Option(optiontext));
-                    //FilterArea.matchFilter.add(option);
-                    // save video path of each matchId
-                    FilterArea.matchIDVideoPaths[match.matchId[0]] = match.videoPath[0];
-                }
+        } else if (method == "/getMatches?sportFilter=" + sport) {
+            for (let i in json) {
+                let matchInfo = json[i][0];
+                let optiontext: string = "Match ID: " + matchInfo.matchId[0];
+                FilterArea.matchFilter.append(new Option(optiontext));
+                // save video path of each matchId
+                FilterArea.matchIDVideoPaths[matchInfo.matchId] = matchInfo.videoPath;
             }
             FilterArea.matchFilter.selectpicker('refresh');
+            let option: string = "";
+            switch (sport) {
+                case "football":
+                    option = "First Half";
+                    FilterArea.periodFilter.append(new Option(option));
+                    option = "Second Half";
+                    FilterArea.periodFilter.append(new Option(option));
+                    break;
+                case "icehockey":
+                    option = "First Period";
+                    FilterArea.periodFilter.append(new Option(option));
+                    option = "Second Period";
+                    FilterArea.periodFilter.append(new Option(option));
+                    option = "Third Period";
+                    FilterArea.periodFilter.append(new Option(option));
+                    break;
+            }
+            FilterArea.periodFilter.selectpicker('refresh');
         }
     }
 
@@ -196,7 +210,7 @@ class FilterArea {
      */
     public static getEventFilters(): string {
         var title = document.getElementById("eventfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
-        if (title != "No event filter selected") {
+        if (title != "Select Event") {
             var res: string = '';
             var events: string[] = title.split(", ");
             for (let i in events) {
@@ -214,7 +228,7 @@ class FilterArea {
      */
     public static getExpandFilters(): string {
         var title = document.getElementById("expandfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
-        if (title != "No expand filter selected") {
+        if (title != "Select Expand Filter") {
             var res: string = '';
             var events: string[] = title.split(", ");
             for (let i in events) {
@@ -232,7 +246,7 @@ class FilterArea {
      */
     public static getTeamFilters(): string {
         var title = document.getElementById("teamfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
-        if (title != "No team filter selected") {
+        if (title != "Select Team") {
             var res: string = '';
             var teams: string[] = title.split(", ");
             for (let i in teams) {
@@ -252,7 +266,7 @@ class FilterArea {
     public static getPlayerFilters(): string {
         var title = document.getElementById("playerfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
         var res = "";
-        if (title != "No player filter selected") {
+        if (title != "Select Player") {
             var list = title.split(", ");
             for (let i in list) {
                 var id = list[i].match(/\[(.*?)\]/)[1].split(":")[1];
@@ -271,7 +285,7 @@ class FilterArea {
     public static getPeriodFilters(): string {
         var title = document.getElementById("periodfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
 
-        if (title != "No period filter selected") {
+        if (title != "Select Period") {
             let res: string = "";
             var events: string[] = title.split(", ");
             for (let i in events) {
@@ -291,11 +305,11 @@ class FilterArea {
     public static getMatchFilters(): string {
         let title = document.getElementById("matchfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
         let res = "";
-        if (title != "No match filter selected") {
+        if (title != "Select Match") {
             let list = title.split(", ");
             for (let i in list) {
                 var id = list[i].split(": ")[1];
-                res += '"filter' + i + '":"' + id + '",';
+                res += '"match' + i + '":"' + id + '",';
             }
             return res.substring(0, res.length - 1);
         } else {
@@ -312,6 +326,15 @@ class FilterArea {
 
     public static deactivateSaveFilterBtn(){
         FilterArea.saveFilter.prop('disabled', true);
+    }
+
+    public static getShiftFilters(): string[] {
+        var event = "shiftEvent";
+        var team = FilterArea.teamFilter.selectpicker('var');
+        var match = FilterArea.matchFilter.selectpicker('var');
+        var period = FilterArea.periodFilter.selectpicker('var');
+
+        return [event, team, match, period];
     }
 
     /**
@@ -424,7 +447,11 @@ class FilterArea {
     }
 
     public static getVideoPath(key): string {
-        return FilterArea.matchIDVideoPaths[key];
+        // only Match ID is the key, delete string and space
+        var splitted = key.split(":", 2);
+        var splitted_id = splitted[1].split(" ");
+        var id = splitted_id[1];
+        return FilterArea.matchIDVideoPaths[id];
     }
 
     public static playerfilterMultiSelect(): boolean {
@@ -440,15 +467,35 @@ class FilterArea {
         $(".filter-label").width(width);
     }
 
+    /**
+     * This function is called after the matchFilter has changed.
+     */
     private static matchFilterChanged(): void{
         var title = document.getElementById("matchfilter").getElementsByTagName("div")[0].getElementsByTagName("button")[0].title;
-        //console.log(title);
-        if (title != "No match filter selected" && title.split(',').length == 1) {      // if a selection has been made && if the user selected one item
+
+        if (title != "Select Match" && title.split(',').length == 1) {      // if a selection has been made && if the user selected one item
             Timeline.switchMatchMode(true);
             videoarea.changeVideo(title);
-
+            DBConnection.getTeamSettings();
+            this.updateFiltersAfterMatchChange();
         }else{
-            Timeline.switchMatchMode(false);
+            Timeline.resetHighlightlist();
+            Graph2d.clearItemList();
+            Network.clearNodesAndEdges();
+            this.reloadFilters();
+            DBConnection.resetTeamSettings();
         }
+    }
+
+    private static updateFiltersAfterMatchChange(): void {
+        DBConnection.getFilter("/getTeamUpdate");
+        DBConnection.getFilter("/getPlayerUpdate");
+    }
+
+    private static reloadFilters(): void {
+        let sport: string = window.location.search.substring(window.location.search.lastIndexOf("=")+1);
+
+        DBConnection.getFilter("/getTeams?sportFilter=" + sport);
+        DBConnection.getFilter("/getPlayers?sportFilter=" + sport);
     }
 }

@@ -22,7 +22,6 @@ declare var contextMenu: any;
 declare var $: any;
 
 class DrawingArea {
-
     static field: any;
     static active_objects: DrawingObject[];
     static active_object: DrawingObject;
@@ -74,7 +73,7 @@ class DrawingArea {
         DrawingArea.polygon_drawing = false;
 
         if(window.location.search.substr(1).split('=')[1] === "football") {
-            DrawingArea.field_src = './imgs/soccer_field.gif';
+            DrawingArea.field_src = './imgs/soccer.jpg';
 
             DrawingArea.db_X_max = CONFIG.DB_X_MAX_soccer;
             DrawingArea.db_X_min = CONFIG.DB_X_MIN_soccer;
@@ -94,6 +93,7 @@ class DrawingArea {
         // adding event listeners for the automatic resizing of the canvas
         window.addEventListener('resize', DrawingArea.resizeCanvas);
         window.addEventListener('DOMContentLoaded', DrawingArea.resizeCanvas);
+        window.addEventListener('load',DrawingArea.resizeCanvas);
 
         // canvas event listeners
         DrawingArea.field.on('mouse:down', function (o) {
@@ -155,6 +155,25 @@ class DrawingArea {
                 $('.upper-canvas').contextMenu('update', updateObj);
             }
         });
+
+        var entry = document.getElementById("entryEventsBtn");
+        var shift = document.getElementById("shiftEventsBtn");
+        var pressing2d = document.getElementById("pressingAnalysis2dBtn");
+        var pressing = document.getElementById("pressingAnalysisBtn");
+        var offTrans = document.getElementById("offTransBtn");
+        var defTrans = document.getElementById("defTransBtn");
+        let sport = window.location.search.substr(1).split('=')[1];
+
+        if (sport != 'icehockey') {
+            entry.style.display = "none";
+            shift.style.display = "none";
+        }
+        if (sport == 'icehockey') {
+            pressing2d.style.display = "none";
+            pressing.style.display = "none";
+            offTrans.style.display = "none";
+            defTrans.style.display = "none";
+        }
     }
 
     /**
@@ -177,7 +196,35 @@ class DrawingArea {
         DBConnection.resetExpandFilterList();
         $("#zooming_filter_switch").prop('checked', false);
         Timeline.zoomingfilterActive = false;
-        OffBallActivities.clear();
+        if (Timeline.getFilterActive()==true){
+            $("#timeline_filter_switch").prop('checked', false);
+            Timeline.triggerTimeFilter();
+        }
+        else{
+            $("#timeline_filter_switch").prop('checked', false);
+        }
+        if(OffBallActivities.isActive==true) {
+            OffBallActivities.triggerOffBallActivities();
+            $("#offball_activate").prop('checked', false);
+            OffBallActivities.clear();
+        }
+
+        let pressBtnContent = document.getElementById("pressingAnalysis2dBtn").innerHTML;
+        if(pressBtnContent=="Deactivate Pressing Index") {
+            Analysis.reset2dToDefault();
+        }
+
+        let pressPhasesBtnContent = document.getElementById("pressingAnalysisBtn").innerHTML;
+        if(pressPhasesBtnContent=="Deactivate Pressing Phases") {
+            document.getElementById("pressingAnalysisBtn").innerHTML='Pressing Phases';
+            Timeline.resizeTimeline();
+        }
+
+        let netBtnContent = document.getElementById("passNetworkBtn").innerHTML;
+        if(netBtnContent=="Deactivate Pass Network") {
+            Network.clearNodesAndEdges();
+            document.getElementById("passNetworkBtn").innerHTML='Pass Network';
+        }
     }
 
     /**
@@ -186,6 +233,7 @@ class DrawingArea {
     public static clearAndReset(): void {
         this.clearCanvas();
         DrawingButtons.standardDrawingMode();
+        Analysis.clearHeatmap();
     }
 
     /**
@@ -201,6 +249,7 @@ class DrawingArea {
         else {
             return;
         }
+        Analysis.clearHeatmap();
     }
 
     /**
@@ -232,7 +281,8 @@ class DrawingArea {
      */
     private static selectionCleared(): void {
         DrawingArea.selected_object = null;
-        FilterArea.resetFilters();
+        // DO NOT resetFilters here, this leads to ugly bugs
+        //FilterArea.resetFilters();
     }
 
     /**
@@ -291,6 +341,7 @@ class DrawingArea {
      */
     private static mouseDown(o): void {
         $('.upper-canvas').contextMenu('close');                            // this is needed to close the context menu with a click on the drawing area
+
         if (DrawingButtons.isDrawingActive() > 0) {
             if(DrawingArea.active_objects.length > 0 && (DrawingArea.active_objects[0].type == "straight_motion_path" || DrawingArea.active_objects[0].type == "freehand_motion_path")){
                 DrawingArea.clearCanvas();
@@ -362,7 +413,6 @@ class DrawingArea {
             DrawingArea.field.remove(DrawingArea.polygon_line_active);
             DrawingArea.polygon_line_active = null;
             DrawingArea.polygon_drawing = false;
-            //DrawingButtons.standardDrawingMode();
             if(!(DrawingButtons.getButtonState()[1] == 2 && DrawingArea.active_objects.length != 1)) {
                 DBConnection.nextQuery();
             }
@@ -485,10 +535,10 @@ class DrawingArea {
         DrawingArea.clearCanvas();
 
         // first get width, height and aspect ratio of background img
-        let img = new Image;
-        let img_path = "url('../../" + DrawingArea.field_src + "')";
+        let img = new Image();
         document.getElementById("field-container").style.backgroundImage = "url('" + DrawingArea.field_src + "')";
         img.src = DrawingArea.field_src;
+
         let imgW = img.width;
         let imgH = img.height;
 
@@ -535,7 +585,6 @@ class DrawingArea {
 
         x = ((((x - DrawingArea.border) * ranges[2]) / ranges[0]) + DrawingArea.db_X_min).toFixed(2);
         y = ((((y - DrawingArea.border) * ranges[3]) / ranges[1]) + DrawingArea.db_Y_min).toFixed(2);
-
         return [x, y];
     }
 
@@ -569,7 +618,6 @@ class DrawingArea {
         let canvasRangeY = canvas_size[1];
         let DBRangeX = (DrawingArea.db_X_max - DrawingArea.db_X_min);
         let DBRangeY = (DrawingArea.db_Y_max - DrawingArea.db_Y_min);
-        // console.log("Canvas Range X, Y: " + canvasRangeX + canvasRangeY + "DB Range X, Y: " + DBRangeX + DBRangeY);
         return [canvasRangeX, canvasRangeY, DBRangeX, DBRangeY];
     }
 
@@ -613,7 +661,7 @@ class DrawingArea {
         if(sport == 1){
             this.field_src = './imgs/rink.gif';
         }else{
-            this.field_src = './imgs/soccer_field.gif';
+            this.field_src = './imgs/soccer.jpg';
         }
         this.resizeCanvas();
     }

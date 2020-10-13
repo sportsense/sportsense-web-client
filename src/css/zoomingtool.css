@@ -25,7 +25,7 @@ body {
   margin: 0;
 }
 .main-div {
-  background-color: #DDDDDD;
+  background-color: #DCDCDC;
   position: absolute;
   top: 51px;
   bottom: 0;
@@ -38,7 +38,10 @@ body {
   height: 25% !important;
 }
 .thirdrow {
-  height: 25% !important;
+  height: 25%;
+}
+.fourthrow {
+  height: 12.5%;
 }
 .pitch {
   overflow: hidden;
@@ -76,8 +79,11 @@ body {
   background-position: center;
 }
 .filter-container {
+  height: 600px;
   margin-left: auto;
   margin-right: auto;
+  overflow: auto;
+  position: relative;
 }
 .filter-padding {
   padding-bottom: 10px;
@@ -130,12 +136,12 @@ body {
   background-color: rgba(0, 0, 255, 0.2);
 }
 .lSlider {
-  z-index: 10000 !important;
+  z-index: 30000 !important;
   background-color: #007bff;
 }
 .rSlider {
   z-index: 10000 !important;
-  background-color: #dc3545;
+  background-color: #007bff;
 }
 .highlight-item {
   background: none !important;
@@ -150,6 +156,10 @@ body {
 .vis-deactivated {
   border-color: #95a5a6;
 }
+.graph2d{
+  fill-opacity:0;
+  stroke-width:2px;
+}
 .container {
   border: 1px solid #ccc;
   width: 400px;
@@ -159,7 +169,6 @@ body {
 .deactivated-highlight-item {
   border: 3px solid #95a5a6;
 }
-
 .offball-slider {
   width: 100%;
   height: 100%;

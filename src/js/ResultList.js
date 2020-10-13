@@ -35,6 +35,10 @@ var ResultList = /** @class */ (function () {
         ResultList.resultList = [];
         Timeline.resetTimeline();
     };
+    ResultList.removeResultsFromResultList = function (start) {
+        ResultList.resultList.slice(start);
+        Timeline.resetTimeline();
+    };
     ResultList.countElements = function () {
         return ResultList.resultList.length;
     };

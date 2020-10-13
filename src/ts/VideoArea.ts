@@ -22,8 +22,8 @@ declare var videojs:any;
 class VideoArea{
 
     public static videoplayer: any;
-    // SUI-CRO matchID as default matchid
-    private static matchid: string = "Match ID: 742569";
+    // POR Match as default matchID
+    private static matchid: string = "Match ID: 279384";
 
     /**
      * starting videojs to initialize the video player
@@ -32,9 +32,9 @@ class VideoArea{
         videojs("video").ready(function(){
             VideoArea.videoplayer = this;
             if(window.location.search.substr(1).split('=')[1] === "football") {
-                VideoArea.videoplayer.src({ type: "video/mp4", src: "./videos/SUI-CRO.mp4" });
+                VideoArea.videoplayer.src({ type: "video/mp4", src: "./videos/POR-SUI.mp4" });
             }else if(window.location.search.substr(1).split('=')[1] === "icehockey"){
-                VideoArea.videoplayer.src("./videos/usa_swe.mp4");
+                VideoArea.videoplayer.src("./videos/2020-02-21_EHCBiel-Lausanne_u20.mp4");
             }
         });
     }
@@ -59,7 +59,6 @@ class VideoArea{
      * adjusts the video source each time the match Filter is changed
      */
     public changeVideo(key: string): void{
-        //console.log(key,VideoArea.matchid);
         if(key === VideoArea.matchid){
             return;
         }else{

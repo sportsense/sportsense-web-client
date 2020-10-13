@@ -27,25 +27,31 @@ class CONFIG{
     public static PROXY_ADDRESS: string = "http://localhost:2222";
     public static METHOD: string = "GET";
 
+    // Team settings
+    public static TEAM_A_Name: string = "Team A";
+    public static TEAM_A_CHAR: string = "A";
+    public static TEAM_B_Name: string = "Team B";
+    public static TEAM_B_CHAR: string = "B";
+
     // Fabric.js drawing colors
-    public static COLOR_STANDARD: string = "rgba(32,91,175,1)";
-    public static COLOR_HIGHLIGHTED: string = "rgba(255,112,166,1)";
-    public static COLOR_HOVER: string = "rgba(114,161,229,1)";
+    public static COLOR_STANDARD: string = "#3000C1";
+    public static COLOR_HIGHLIGHTED: string = "#FF70A6";
+    public static COLOR_HOVER: string = "#72A1E5";
     public static COLOR_NONE: string = "rgba(0,0,0,0)";
-    public static COLOR_SELECTION: string = "rgba(255,200,0,1)";
-    public static COLOR_DEACTIVATED: string = "rgba(149, 165, 166, 1)";
+    public static COLOR_SELECTION: string = "#FFC800";
+    public static COLOR_DEACTIVATED: string = "#95A5A6";
     public static COLOR_INVISIBLE: string = "rgba(0,0,0,0)";
 
     // Fabric.js drawing colors for off-ball activities
-    public static COLOR_BALL_STANDARD: string = "rgba(50,50,50,1)";
-    public static COLOR_BALL_HIGHLIGHTED: string = "rgba(80,80,80,1)";
-    public static COLOR_BALL_HOVER: string = "rgba(120,120,120,1)";
-    public static COLOR_TEAM_A_STANDARD: string = "rgba(220,0,0,1)";
-    public static COLOR_TEAM_A_HIGHLIGHTED: string = "rgba(255,112,166,1)";
-    public static COLOR_TEAM_A_HOVER: string = "rgba(255,50,50,1)";
-    public static COLOR_TEAM_B_STANDARD: string = "rgba(0,0,220,1)";
-    public static COLOR_TEAM_B_HIGHLIGHTED: string = "rgba(255,112,166,1)";
-    public static COLOR_TEAM_B_HOVER: string = "rgba(50,50,255,1)";
+    public static COLOR_BALL_STANDARD: string = "rgba(50,50,50,0.7)";
+    public static COLOR_BALL_HIGHLIGHTED: string = "#505050";
+    public static COLOR_BALL_HOVER: string = "#787878";
+    public static COLOR_TEAM_A_STANDARD: string = "#DC0000";
+    public static COLOR_TEAM_A_HIGHLIGHTED: string = "#FF70A6";
+    public static COLOR_TEAM_A_HOVER: string = "#FF3232";
+    public static COLOR_TEAM_B_STANDARD: string = "#0000DC";
+    public static COLOR_TEAM_B_HIGHLIGHTED: string = "#FF70A6";
+    public static COLOR_TEAM_B_HOVER: string = "#3232FF";
 
     public static COLOR_POLYGON_START: string = "rgba(60,180,255,0.8)";
     public static COLOR_POLYGON_END: string = "rgba(120,255,255,0.8)";
@@ -86,6 +92,10 @@ class CONFIG{
     public static INITIAL_SLIDER2_POSITION: number = 3000; // initial position of slider2 in milliseconds
     public static COMPLEX_SLIDER_MIN: number = -10000; // minimum value of complex slider
     public static COMPLEX_SLIDER_MAX: number = 10000; // maximum value of complex slider
+
+    // Pressure
+    public static PRESSING_INDEX_THRESHOLD: number = 2.0;       // Pressing Index
+    public static PRESSING_DURATION_THRESHOLD: number = 2000;   // 2 seconds
 
     // Highlight events
     public static HIGHLIGHT_EVENTS = [

@@ -22,23 +22,32 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link href="src/css/analysis.css" rel="stylesheet" type="text/css"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/multi-select/0.9.12/css/multi-select.css" rel="stylesheet" type="text/css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
+
     <link href="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.css" rel="stylesheet" type="text/css">
     <link href="https://cdn.jsdelivr.net/npm/nouislider@13.1.5/distribute/nouislider.css" rel="stylesheet" type="text/css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" >
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/multi-select/0.9.12/css/multi-select.css" rel="stylesheet" type="text/css">
+
     <link href="src/css/chartToggler.css" type="text/css" rel="stylesheet">
 
     <title>Query Analysis</title>
     </head>
     <body onload="Analysis.loadQuerySelection()">
-    <div class="container">
+    <div class="row-name">
         <h1>Query Analysis</h1>
+    </div>
+    <div class="container-fluid">
         <div class="row">
+            <div class="col">
+            </div>
             <div class="col">
                 <select multiple="multiple" id="query_select" name="my-select[]">
                 </select>
+            </div>
+            <div class="col">
             </div>
             <div class="col">
                 <select multiple="multiple" id="query_param_select" name="my-select[]">
@@ -64,7 +73,7 @@
                         <option value="Shots - General">General</option>
                         <option value="Shot Attributes">Attributes</option>
                     </optgroup>
-                    <optgroup label="Defending">
+                    <optgroup label="Defense">
                         <option value="Interceptions">Interceptions</option>
                         <option value="Clearances">Clearances</option>
                         <option value="avgClearanceLength">Avg Clearance Length</option>
@@ -74,8 +83,39 @@
                     </optgroup>
                 </select>
             </div>
+            <div class="col">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm">
+            </div>
+            <div class="col-sm">
+            </div>
+            <div class="col-sm">
+                <button id="selectQueryParamBtn" class="btn btn-secondary" content="Select All" onclick="Analysis.selectAllQueryParam()" >Select All</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm">
+            </div>
+            <div class="col-sm">
+            </div>
+            <div class="col-sm">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm">
+            </div>
+            <div class="col-sm">
+            </div>
+            <div class="col-sm">
+            </div>
         </div>
     </div>
+
     <div class="container">
         <br>
         <div class="row">
@@ -92,7 +132,7 @@
 
             </div>
             <div class="col-sm">
-                <button id="analysisButton" class="btn btn-primary btn-block" onclick="Analysis.analyzeQueries() ">Analyze</button>
+                <button id="queryAnalysisButton" class="btn btn-primary btn-block" onclick="Analysis.analyzeQueries() ">Analyze</button>
             </div>
             <div class="col-sm">
                 <button class="btn-info btn-sm" onclick="Analysis.showOrHideTimelineFilter()"><i class="fa fa-clock-o"></i> Timeline</button>
@@ -104,11 +144,33 @@
             <div id="timeBtns" class="btn-group" role="group">
                 <button type="button" class="btn btn-info" id="1stHalf" onclick="Analysis.setFirstHalf()">1st Half</button>
                 <button type="button" class="btn btn-info" id="2ndHalf" onclick="Analysis.setSecondHalf()">2nd Half</button>
+                <button type="button" class="btn btn-info" id="3rdHalf" onclick="Analysis.setThirdHalf()">3rd Half</button>
             </div>
         </div>
     </div>
 
     <div class="container" id="allCharts">
+    </div>
+
+
+    <!-- Error Modal -->
+    <div class="modal fade" id="errorQueryModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle" style="color:red">Error</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="error-querymodal-text"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- import external libraries-->
@@ -122,6 +184,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes@0.4.0/dist/chartjs-plugin-colorschemes.min.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/nouislider@13.1.5/distribute/nouislider.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/multi-select/0.9.12/js/jquery.multi-select.js" type="text/javascript"></script>
+
 
     <!-- import SportSense js files -->
     <script src="src/js/Analysis.js"></script>

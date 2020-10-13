@@ -48,6 +48,7 @@ var Rectangle = /** @class */ (function (_super) {
             object_ref: _this
         });
         DrawingArea.field.add(_this.rect);
+        DrawingArea.field.renderAll();
         return _this;
     }
     /**

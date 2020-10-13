@@ -29,9 +29,10 @@ var offballactivities = new OffBallActivities();
 var filters = new FilterArea();
 var drawingbtns = new DrawingButtons();
 var resultlist = new ResultList();
-//let dbconnection = new DBConnection();
 var videoarea = new VideoArea();
 var timeline = new Timeline();
+var graph2d = new Graph2d();
+var network = new Network();
 $(function () {
     window.dispatchEvent(new Event('resize'));
 });

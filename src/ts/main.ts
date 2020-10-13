@@ -32,9 +32,10 @@ let offballactivities = new OffBallActivities();
 let filters = new FilterArea();
 let drawingbtns = new DrawingButtons();
 let resultlist = new ResultList();
-//let dbconnection = new DBConnection();
 let videoarea = new VideoArea();
 let timeline = new Timeline();
+let graph2d = new Graph2d();
+let network = new Network();
 
 $(function() {
     window.dispatchEvent(new Event('resize'));
